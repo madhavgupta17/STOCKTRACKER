@@ -514,7 +514,6 @@ tr:hover td { background: #fafcfb; }
   </div>
   <div class="desktop-links">
     <button data-p="dash">Dashboard</button>
-    <button data-p="search">Search</button>
     <button data-p="buy">Add Stock</button>
     <button data-p="sell">Record Sale</button>
     <button data-p="plog">Purchase Log</button>
@@ -555,10 +554,7 @@ tr:hover td { background: #fafcfb; }
     <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/><line x1="12" y1="10" x2="20" y2="10"/></svg>
     <span>Sale Log</span>
   </button>
-  <button class="b-tab" data-p="search">
-    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <span>Search</span>
-  </button>
+
   <button class="b-tab" data-p="rep">
     <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
     <span>Reports</span>
@@ -614,18 +610,21 @@ $('#modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
 
 // PDF & CSV EXPORTS
 function pdf(title, head, rows, name, sub) {
-  const d = new jspdf.jsPDF();
-  d.setFontSize(16);
-  d.text(title, 14, 16);
-  d.setFontSize(9);
+  const d = new jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  d.setFontSize(13);
+  d.text(title, 14, 12);
+  d.setFontSize(7);
   d.setTextColor(110);
-  d.text((sub ? sub + '  |  ' : '') + 'Generated ' + fmt(today()), 14, 22);
+  d.text((sub ? sub + '  |  ' : '') + 'Generated ' + fmt(today()), 14, 17);
   d.autoTable({
     head: [head],
     body: rows,
-    startY: 27,
-    headStyles: { fillColor: [14, 124, 95] },
-    styles: { fontSize: 9 },
+    startY: 21,
+    headStyles: { fillColor: [14, 124, 95], fontSize: 7, cellPadding: 2, fontStyle: 'bold' },
+    bodyStyles: { fontSize: 7, cellPadding: 1.5 },
+    styles: { overflow: 'linebreak', lineWidth: 0.1, lineColor: [220, 220, 220] },
+    alternateRowStyles: { fillColor: [245, 250, 248] },
+    margin: { top: 21, left: 8, right: 8 },
     didParseCell: h => { if (String(h.row.raw[0]).startsWith('Total')) h.cell.styles.fontStyle = 'bold'; }
   });
   d.save(name + '-' + today() + '.pdf');
