@@ -1,0 +1,5 @@
+node_modules/
+.env
+backup.json
+cashew_report.csv
+*.log

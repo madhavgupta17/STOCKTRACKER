@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>CashewTrack — Inventory & Sales</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root {
+  --bg: #f4f7f5;
+  --panel: #ffffff;
+  --line: #e2e8e5;
+  --line-light: #edf2ef;
+  --tx: #111b17;
+  --mu: #61726a;
+  --gold: #0e7c5f;
+  --gold-hover: #0a634c;
+  --gold-soft: #e7f5ef;
+  --red: #c93b2b;
+  --red-soft: #fdeeed;
+  --amber: #b26c00;
+  --amber-soft: #fef4e5;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font: 15px/1.45 'IBM Plex Sans', -apple-system, sans-serif;
+  min-height: 100vh;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+}
+
+h1, h2, h3, .brand { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.02em; }
+
+/* TOP NAV (Desktop + Mobile Header) */
+nav.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 60px;
+}
+
+.brand-wrap { display: flex; align-items: center; gap: 8px; }
+.brand-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--gold);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 700;
+}
+.brand { font-size: 20px; font-weight: 700; color: var(--gold); }
+
+.desktop-links { display: flex; align-items: center; gap: 4px; overflow-x: auto; }
+.desktop-links button {
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--mu);
+  padding: 18px 12px 15px;
+  font: 600 13.5px 'IBM Plex Sans';
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.desktop-links button:hover { color: var(--tx); }
+.desktop-links button.on { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* MOBILE BOTTOM NAVIGATION BAR */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--line);
+  padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+  justify-content: space-around;
+  align-items: center;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.04);
+}
+.b-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  padding: 6px 2px;
+  color: var(--mu);
+  font: 500 11px 'IBM Plex Sans';
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+.b-tab svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; }
+.b-tab.on { color: var(--gold); font-weight: 700; }
+.b-tab.on svg { stroke: var(--gold); stroke-width: 2.3; }
+.b-tab:active { transform: scale(0.93); }
+
+/* MAIN CONTAINER */
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+h1 { margin: 0; font-size: 26px; font-weight: 700; color: var(--tx); }
+.date-pill {
+  color: var(--mu);
+  font-size: 13px;
+  font-weight: 500;
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 6px 14px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* CARDS & PANELS */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+.card h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tx);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* STATS CARDS */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.stat {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.stat span { color: var(--mu); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.stat b { display: block; font: 700 30px/1.1 'Space Grotesk'; margin: 6px 0 2px; }
+.stat small { color: var(--mu); font-size: 12px; }
+
+/* SEARCH & FILTER CONTROLS */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.search-input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+}
+.search-input-wrap input {
+  padding-left: 38px;
+}
+.search-icon-inside {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--mu);
+  pointer-events: none;
+  font-size: 15px;
+}
+
+/* GRIDS FOR GRADES (Dashboard) */
+.grade-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.grade-grid::-webkit-scrollbar { width: 5px; }
+.grade-grid::-webkit-scrollbar-thumb { background: #d0dad5; border-radius: 4px; }
+
+.g {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 10px;
+  text-align: center;
+  cursor: pointer;
+  background: #fafcfb;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 90px;
+}
+.g:active { transform: scale(0.97); }
+.g:hover { border-color: var(--gold); box-shadow: 0 2px 8px rgba(14,124,95,0.1); }
+.g i { font-style: normal; color: var(--mu); font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+.g b { display: block; font: 700 24px/1.2 'Space Grotesk'; color: var(--tx); }
+.g small { color: var(--mu); font-size: 11px; }
+
+.g.low { background: var(--amber-soft); border-color: #f0c377; }
+.g.low b { color: var(--amber); }
+.g.out { background: var(--red-soft); border-color: #f7b4ad; opacity: 0.85; }
+.g.out b { color: var(--red); }
+
+/* ALERTS */
+.alert {
+  border: 1px solid #f7b4ad;
+  background: var(--red-soft);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  color: #8c1e13;
+  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.alert.w { border-color: #f0c377; background: var(--amber-soft); color: #7f4b00; }
+
+.two { display: grid; grid-template-columns: 3fr 2fr; gap: 18px; }
+
+/* FORMS & INPUTS - OPTIMIZED FOR MOBILE */
+label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--mu);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+input, select, textarea {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #c8d3ce;
+  color: var(--tx);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 16px; /* Prevents auto-zoom on iOS */
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2361726a' d='M1.41 0L6 4.58L10.59 0L12 1.41l-6 6l-6-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(14,124,95,0.15);
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 14px;
+}
+.row > div { flex: 1; min-width: 140px; }
+
+/* BUTTONS */
+.btn {
+  background: var(--gold);
+  color: #ffffff;
+  border: 0;
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  font: 600 14.5px 'IBM Plex Sans';
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn:hover { background: var(--gold-hover); }
+.btn:active { transform: scale(0.97); }
+.btn.s { background: #ffffff; color: var(--tx); border: 1px solid #c8d3ce; }
+.btn.s:hover { background: #f6f8f7; border-color: #adbdb5; }
+.btn.d { background: #fff; color: var(--red); border: 1px solid #f7b4ad; }
+.btn.d:hover { background: var(--red-soft); }
+.btn.sm { padding: 7px 14px; font-size: 13px; min-height: 34px; border-radius: 8px; }
+.btn.block { width: 100%; }
+
+/* ENTRY FORM ROW */
+.ln {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr auto;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+  background: #fbfdfc;
+  padding: 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-light);
+}
+
+/* CHIPS, PILLS, BADGES */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--gold-soft);
+  color: var(--gold);
+  border-radius: 8px;
+  padding: 4px 10px;
+  margin: 0 6px 4px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.chip em { font-style: normal; color: var(--tx); margin-left: 6px; font-weight: 700; }
+
+.pill {
+  border: 1px solid #c8d3ce;
+  background: #fff;
+  border-radius: 99px;
+  padding: 7px 14px;
+  font: 500 13px 'IBM Plex Sans';
+  cursor: pointer;
+  margin: 0 6px 6px 0;
+  display: inline-block;
+  transition: all 0.15s;
+}
+.pill:active { transform: scale(0.94); }
+.pill.on { background: var(--gold); color: #fff; border-color: var(--gold); font-weight: 600; }
+
+.badge {
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 3px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.badge.p { background: var(--gold-soft); color: var(--gold); }
+.badge.s { background: var(--red-soft); color: var(--red); }
+.pos { color: var(--gold); }
+.neg { color: var(--red); }
+.tot { font-weight: 700; font-size: 15px; margin-top: 14px; }
+
+/* RESPONSIVE TABLES & MOBILE TRANSACTION CARDS */
+.tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; min-width: 500px; }
+th { text-align: left; color: var(--mu); font-size: 12px; font-weight: 600; padding: 10px 8px; border-bottom: 2px solid var(--line); text-transform: uppercase; letter-spacing: 0.03em; }
+td { padding: 12px 8px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 14px; }
+tr:hover td { background: #fafcfb; }
+
+/* MOBILE CARD LOG ITEMS */
+.m-cards { display: none; }
+.tx-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+.tx-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.tx-card-party { font-weight: 700; font-size: 15px; color: var(--tx); }
+.tx-card-date { color: var(--mu); font-size: 12.5px; }
+.tx-card-items { margin: 8px 0; }
+.tx-card-notes { font-size: 12.5px; color: var(--mu); margin-bottom: 8px; font-style: italic; }
+.tx-card-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+
+/* MODAL */
+#modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 20px 16px;
+  z-index: 100;
+}
+#modal .card {
+  width: min(620px, 100%);
+  margin: auto;
+  box-shadow: var(--shadow-lg);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* TOAST */
+#toast {
+  position: fixed;
+  bottom: calc(85px + env(safe-area-inset-bottom, 0px));
+  right: 20px;
+  background: #111b17;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  display: none;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 120;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.2s ease;
+}
+#toast.e { background: var(--red); }
+@keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* PAGINATION BUTTON */
+.load-more-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  color: var(--gold);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.load-more-btn:active { background: var(--gold-soft); }
+
+/* MOBILE BREAKPOINT */
+@media (max-width: 768px) {
+  body { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+  .desktop-links { display: none; }
+  .bottom-nav { display: flex; }
+  main { padding: 16px 14px; }
+  h1 { font-size: 22px; }
+  .two { grid-template-columns: 1fr; gap: 14px; }
+  .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat b { font-size: 26px; }
+  .grade-grid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 8px; max-height: 400px; }
+  .g { min-height: 80px; padding: 10px 6px; }
+  .g b { font-size: 20px; }
+  .ln { grid-template-columns: 1.5fr 1fr auto; gap: 6px; padding: 6px; }
+  .ln input, .ln select { padding: 10px 8px; font-size: 15px; }
+
+  /* Switch Table to Cards on Mobile */
+  .tw-desktop { display: none; }
+  .m-cards { display: block; }
+}
+
+@media print {
+  nav.top-nav, .bottom-nav, .noprint, #modal { display: none !important; }
+  body { padding: 0; background: #fff; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP APP HEADER -->
+<nav class="top-nav">
+  <div class="brand-wrap">
+    <div class="brand-icon">🥜</div>
+    <div class="brand">CashewTrack</div>
+  </div>
+  <div class="desktop-links">
+    <button data-p="dash">Dashboard</button>
+    <button data-p="search">Search</button>
+    <button data-p="buy">Add Stock</button>
+    <button data-p="sell">Record Sale</button>
+    <button data-p="plog">Purchase Log</button>
+    <button data-p="slog">Sales Log</button>
+    <button data-p="rep">Reports</button>
+    <button data-p="set">Settings</button>
+  </div>
+  <span class="date-pill" id="today"></span>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main>
+  <header>
+    <h1 id="title">Dashboard</h1>
+  </header>
+  <div id="view"></div>
+</main>
+
+<!-- MOBILE BOTTOM NAVIGATION BAR -->
+<nav class="bottom-nav">
+  <button class="b-tab on" data-p="dash">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    <span>Stock</span>
+  </button>
+  <button class="b-tab" data-p="buy">
+    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    <span>Buy</span>
+  </button>
+  <button class="b-tab" data-p="sell">
+    <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+    <span>Sell</span>
+  </button>
+  <button class="b-tab" data-p="slog">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <span>Logs</span>
+  </button>
+  <button class="b-tab" data-p="search">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span>Search</span>
+  </button>
+  <button class="b-tab" data-p="rep">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>Reports</span>
+  </button>
+  <button class="b-tab" data-p="set">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span>Settings</span>
+  </button>
+</nav>
+
+<div id="modal"><div class="card" id="mbody"></div></div>
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today = () => iso(new Date());
+const fmt = s => s ? s.split('-').reverse().join('/') : '';
+const num = n => Math.round((Number(n) || 0) * 100) / 100;
+let grades = [], low = 5;
+
+// API HELPER
+async function api(u, m = 'GET', b) {
+  const r = await fetch('/api' + u, {
+    method: m,
+    headers: { 'Content-Type': 'application/json' },
+    body: b ? JSON.stringify(b) : undefined
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'Server error');
+  return j;
+}
+
+function toast(t, e) {
+  const x = $('#toast');
+  x.textContent = t;
+  x.className = e ? 'e' : '';
+  x.style.display = 'block';
+  clearTimeout(x.t);
+  x.t = setTimeout(() => x.style.display = 'none', 2800);
+}
+
+const guard = f => async (...a) => {
+  try { await f(...a); } catch (e) { toast(e.message, 1); }
+};
+
+function openModal(h) {
+  $('#mbody').innerHTML = h;
+  $('#modal').style.display = 'flex';
+}
+function closeModal() {
+  $('#modal').style.display = 'none';
+}
+$('#modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
+
+// PDF & CSV EXPORTS
+function pdf(title, head, rows, name, sub) {
+  const d = new jspdf.jsPDF();
+  d.setFontSize(16);
+  d.text(title, 14, 16);
+  d.setFontSize(9);
+  d.setTextColor(110);
+  d.text((sub ? sub + '  |  ' : '') + 'Generated ' + fmt(today()), 14, 22);
+  d.autoTable({
+    head: [head],
+    body: rows,
+    startY: 27,
+    headStyles: { fillColor: [14, 124, 95] },
+    styles: { fontSize: 9 },
+    didParseCell: h => { if (String(h.row.raw[0]).startsWith('Total')) h.cell.styles.fontStyle = 'bold'; }
+  });
+  d.save(name + '-' + today() + '.pdf');
+}
+
+function csv(head, rows, name) {
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const b = new Blob([[head, ...rows].map(r => r.map(q).join(',')).join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  a.download = name + '-' + today() + '.csv';
+  a.click();
+}
+
+/* ---------- ENTRY FORM (OPTIMIZED FOR MOBILE TOUCH) ---------- */
+async function entryForm(type, tx, done) {
+  const [stock, parties] = await Promise.all([api('/stock'), api('/parties?type=' + type)]);
+  const avail = Object.fromEntries(stock.map(s => [s.grade, s.balance]));
+  const own = {};
+  if (tx) tx.lines.forEach(l => own[l.grade] = (own[l.grade] || 0) + l.qty);
+  const sale = type === 'sale', who = sale ? 'Buyer' : 'Seller';
+
+  const opts = g => `<option value="">Select grade</option>` + grades.map(x =>
+    `<option ${x === g ? 'selected' : ''} value="${esc(x)}">${esc(x)}${sale ? ` (${num(avail[x] || 0)} available)` : ''}</option>`
+  ).join('');
+
+  const line = l => `
+    <div class="ln">
+      <select>${opts(l?.grade)}</select>
+      <input type="number" inputmode="decimal" min="0" step="any" placeholder="Qty (BKT)" value="${l?.qty ?? ''}">
+      <button type="button" class="btn d sm" title="Remove item" style="padding:8px 12px;font-size:16px">✕</button>
+    </div>
+  `;
+
+  const w = document.createElement('div');
+  w.innerHTML = `
+    <h2>${tx ? 'Edit' : 'New'} ${sale ? 'Sale' : 'Stock Entry'}</h2>
+    <div class="row">
+      <div>
+        <label>Date</label>
+        <input type="date" id="f-date" value="${tx?.date || today()}">
+      </div>
+      <div>
+        <label>${who} Name</label>
+        <input id="f-party" list="pl" value="${esc(tx?.party || '')}" placeholder="${sale ? 'e.g. KUMAR RETAIL' : 'e.g. NUTBERRY'}">
+        <datalist id="pl">${parties.map(p => `<option value="${esc(p)}">`).join('')}</datalist>
+      </div>
+    </div>
+    <label>Items (Cashew Grades & Quantities)</label>
+    <div id="lines"></div>
+    <button type="button" class="btn s sm" id="add" style="margin-top:4px">+ Add Another Grade</button>
+    <div style="margin-top:14px">
+      <label>Notes (optional)</label>
+      <input id="f-notes" value="${esc(tx?.notes || '')}" placeholder="Optional details (e.g. 5 at home)">
+    </div>
+    <div class="row" style="margin-top:20px">
+      <button class="btn" id="save" style="flex:2">${tx ? 'Save Changes' : sale ? 'Record Sale' : 'Add Stock'}</button>
+      <button class="btn s" id="cancel" style="flex:1">${tx ? 'Cancel' : 'Clear'}</button>
+    </div>
+  `;
+
+  const L = w.querySelector('#lines');
+  const addLine = l => { L.insertAdjacentHTML('beforeend', line(l)); };
+  (tx ? tx.lines : [null]).forEach(addLine);
+
+  L.onclick = e => {
+    if (e.target.tagName === 'BUTTON' && L.children.length > 1) {
+      e.target.closest('.ln').remove();
+    }
+  };
+  w.querySelector('#add').onclick = () => addLine();
+  w.querySelector('#cancel').onclick = () => tx ? closeModal() : done(true);
+
+  w.querySelector('#save').onclick = guard(async () => {
+    const lines = [...L.children].map(r => ({
+      grade: r.querySelector('select').value,
+      qty: r.querySelector('input').value
+    })).filter(l => l.grade || l.qty);
+
+    if (!lines.length || lines.some(l => !l.grade || !(+l.qty > 0))) {
+      throw new Error('Pick a grade and a quantity above 0 for every line');
+    }
+    if (sale) {
+      const need = {};
+      lines.forEach(l => need[l.grade] = (need[l.grade] || 0) + +l.qty);
+      const over = Object.keys(need).filter(g => need[g] > (avail[g] || 0) + (own[g] || 0));
+      if (over.length && !confirm('Not enough stock for: ' + over.join(', ') + '. Save anyway?')) return;
+    }
+    const body = {
+      type,
+      date: w.querySelector('#f-date').value,
+      party: w.querySelector('#f-party').value,
+      lines,
+      notes: w.querySelector('#f-notes').value
+    };
+    tx ? await api('/tx/' + tx._id, 'PUT', body) : await api('/tx', 'POST', body);
+    toast(tx ? 'Changes saved' : sale ? 'Sale recorded' : 'Stock added');
+    done();
+  });
+
+  return w;
+}
+
+/* ---------- PAGES ---------- */
+const pages = {
+  /* 1. DASHBOARD */
+  async dash(v) {
+    const t = today();
+    const [st, dayS] = await Promise.all([api('/stock'), api(`/stock?from=${t}&to=${t}`)]);
+    const sum = (a, k) => num(a.reduce((x, y) => x + (y[k] || 0), 0));
+    const lows = st.filter(s => s.balance < low && s.balance > 0);
+    const outs = st.filter(s => s.balance <= 0);
+
+    v.innerHTML = `
+      <div class="stats">
+        <div class="stat"><span>Total Stock</span><b>${sum(st, 'balance')}</b><small>BKT across ${st.length} grades</small></div>
+        <div class="stat"><span>Added Today</span><b class="pos">+${sum(dayS, 'added')}</b><small>BKT received</small></div>
+        <div class="stat"><span>Sold Today</span><b class="neg">-${sum(dayS, 'sold')}</b><small>BKT dispatched</small></div>
+        <div class="stat"><span>Low / Out</span><b>${lows.length + outs.length}</b><small>${lows.length} low, ${outs.length} empty</small></div>
+      </div>
+
+      <div class="two">
+        <div class="card">
+          <h2>
+            <span>Current Stock (${st.length} grades)</span>
+          </h2>
+          <div class="filter-bar">
+            <div class="search-input-wrap">
+              <span class="search-icon-inside">🔍</span>
+              <input type="text" id="g-search" placeholder="Filter grades (e.g. W320, JH)...">
+            </div>
+            <div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:2px">
+              <button class="pill on" data-gf="all">All (${st.length})</button>
+              <button class="pill" data-gf="pos">In Stock</button>
+              <button class="pill" data-gf="low">Low (${lows.length})</button>
+              <button class="pill" data-gf="out">Out (${outs.length})</button>
+            </div>
+          </div>
+          <div class="grade-grid" id="g-list"></div>
+        </div>
+
+        <div class="card">
+          <h2>Stock Alerts</h2>
+          <div style="max-height:480px;overflow-y:auto">
+            ${outs.map(s => `<div class="alert">🚨 <div><b>${esc(s.grade)}</b> is completely out of stock</div></div>`).join('')}
+            ${lows.map(s => `<div class="alert w">⚠️ <div><b>${esc(s.grade)}</b> has only ${num(s.balance)} BKT remaining (below ${low})</div></div>`).join('')}
+            ${!outs.length && !lows.length ? '<p style="color:var(--mu);padding:14px 0">✅ All grades are well stocked!</p>' : ''}
+          </div>
+        </div>
+      </div>
+    `;
+
+    let activeFilter = 'all';
+    const renderGrades = () => {
+      const q = ($('#g-search')?.value || '').toLowerCase().trim();
+      const filtered = st.filter(s => {
+        if (q && !s.grade.toLowerCase().includes(q)) return false;
+        if (activeFilter === 'pos') return s.balance > 0;
+        if (activeFilter === 'low') return s.balance < low && s.balance > 0;
+        if (activeFilter === 'out') return s.balance <= 0;
+        return true;
+      });
+      $('#g-list').innerHTML = filtered.length ? filtered.map(s => `
+        <div class="g ${s.balance <= 0 ? 'out' : s.balance < low ? 'low' : ''}" data-g="${esc(s.grade)}" title="Click to view history">
+          <i>${esc(s.grade)}</i>
+          <b>${num(s.balance)}</b>
+          <small>BKT</small>
+        </div>
+      `).join('') : '<p style="color:var(--mu);padding:20px;grid-column:1/-1;text-align:center">No grades match your search.</p>';
+    };
+
+    $('#g-search').oninput = renderGrades;
+    v.querySelectorAll('[data-gf]').forEach(btn => {
+      btn.onclick = () => {
+        v.querySelectorAll('[data-gf]').forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+        activeFilter = btn.dataset.gf;
+        renderGrades();
+      };
+    });
+    renderGrades();
+  },
+
+  async buy(v) { v.append(await entryForm('purchase', null, () => go('dash'))); },
+  async sell(v) { v.append(await entryForm('sale', null, () => go('dash'))); },
+
+  /* 2. SEARCH PAGE */
+  search: v => searchPage(v),
+
+  /* 3. LOGS (Purchase & Sales) */
+  async plog(v) { return renderLogPage(v, 'purchase'); },
+  async slog(v) { return renderLogPage(v, 'sale'); },
+
+  /* 4. REPORTS */
+  async rep(v) {
+    v.innerHTML = `
+      <div class="card">
+        <h2>Stock Movement Report</h2>
+        <div class="row">
+          <div><label>From Date</label><input type="date" id="rf"></div>
+          <div><label>To Date</label><input type="date" id="rt"></div>
+          <button class="btn s sm" data-q="d">Today</button>
+          <button class="btn s sm" data-q="w">This Week</button>
+          <button class="btn s sm" data-q="m">This Month</button>
+          <button class="btn s sm" data-q="a">All Time</button>
+        </div>
+        <div class="row noprint" style="margin-top:10px">
+          <button class="btn s sm" id="c">⬇ Download CSV</button>
+          <button class="btn sm" id="p">📄 Download PDF</button>
+          <button class="btn s sm" onclick="print()">🖨️ Print</button>
+        </div>
+        <div class="tw" style="margin-top:14px" id="rt-out"></div>
+      </div>
+    `;
+
+    let data = [];
+    const load = guard(async () => {
+      const f = $('#rf').value, t = $('#rt').value;
+      data = await api(`/stock?from=${f}&to=${t}`);
+      $('#rt-out').innerHTML = `
+        <table>
+          <thead><tr><th>Grade</th><th>Added</th><th>Sold</th><th>Balance Now</th></tr></thead>
+          <tbody>
+            ${data.map(s => `
+              <tr>
+                <td><span class="chip">${esc(s.grade)}</span></td>
+                <td class="pos">+${num(s.added)} BKT</td>
+                <td class="neg">-${num(s.sold)} BKT</td>
+                <td><b>${num(s.balance)}</b> BKT</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    });
+
+    v.onchange = e => { if (e.target.type === 'date') load(); };
+    v.onclick = e => {
+      const q = e.target.dataset.q;
+      if (!q) return;
+      const n = new Date(), d = new Date();
+      if (q === 'w') { const k = (n.getDay() + 6) % 7; d.setDate(n.getDate() - k); }
+      else if (q === 'm') d.setDate(1);
+      $('#rf').value = q === 'a' ? '' : iso(d);
+      $('#rt').value = q === 'a' ? '' : today();
+      load();
+    };
+
+    const rows = () => data.map(s => [s.grade, num(s.added), num(s.sold), num(s.balance)]);
+    $('#c').onclick = () => csv(['Grade', 'Added', 'Sold', 'Balance'], rows(), 'stock-report');
+    $('#p').onclick = () => pdf(
+      'Stock Movement Report',
+      ['Grade', 'Added', 'Sold', 'Balance now'],
+      [...rows(), ['Total', num(data.reduce((a,b)=>a+b.added,0)), num(data.reduce((a,b)=>a+b.sold,0)), num(data.reduce((a,b)=>a+b.balance,0))]],
+      'stock-report',
+      'Period: ' + ($('#rf').value ? fmt($('#rf').value) : 'start') + ' to ' + ($('#rt').value ? fmt($('#rt').value) : 'today')
+    );
+
+    $('#rf').value = today().slice(0, 8) + '01';
+    $('#rt').value = today();
+    load();
+  },
+
+  /* 5. SETTINGS */
+  async set(v) {
+    const draw = () => {
+      v.innerHTML = `
+        <div class="two">
+          <div class="card">
+            <h2>Cashew Grades (${grades.length})</h2>
+            <div class="row">
+              <div style="flex:2"><input id="ng" placeholder="New grade code, e.g. W500"></div>
+              <button class="btn" id="ag" style="flex:0;white-space:nowrap">+ Add Grade</button>
+            </div>
+            <div style="max-height:360px;overflow-y:auto">
+              <table>
+                <tbody>
+                  ${grades.map(g => `
+                    <tr>
+                      <td><b>${esc(g)}</b></td>
+                      <td style="text-align:right">
+                        <button class="btn d sm" data-g="${esc(g)}">Remove</button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <h2>Low Stock Alert Limit</h2>
+              <p style="color:var(--mu);font-size:13px;margin:0 0 10px">Show warning when any grade quantity drops below this amount (BKT):</p>
+              <div class="row">
+                <div><input id="lw" type="number" min="0" value="${low}"></div>
+                <button class="btn" id="sl" style="flex:0">Save Limit</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2>Data Backup & Migration</h2>
+              <p style="color:var(--mu);font-size:13px;margin:0 0 12px">Download full JSON backup of MongoDB database or restore previous backups.</p>
+              <div class="row noprint" style="gap:10px">
+                <button class="btn s sm" id="bk-exp" style="flex:1">⬇ Export Backup JSON</button>
+                <label class="btn s sm" style="cursor:pointer;flex:1">
+                  ⬆ Import Backup JSON
+                  <input type="file" id="bk-imp" accept=".json" style="display:none">
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      $('#ag').onclick = guard(async () => {
+        const val = $('#ng').value.trim();
+        if (!val) return;
+        await api('/grades', 'POST', { name: val });
+        grades = await api('/grades');
+        draw();
+        toast('Grade added');
+      });
+
+      $('#sl').onclick = guard(async () => {
+        await api('/settings', 'PUT', { low: $('#lw').value });
+        low = +$('#lw').value;
+        toast('Limit saved');
+      });
+
+      $('#bk-exp').onclick = guard(async () => {
+        const d = await api('/export');
+        const b = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = 'cashewtrack_backup_' + today() + '.json';
+        a.click();
+        toast('Backup exported');
+      });
+
+      $('#bk-imp').onchange = guard(async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async ev => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            await api('/import', 'POST', data);
+            [grades, { low }] = await Promise.all([api('/grades'), api('/settings')]);
+            draw();
+            toast('Backup imported successfully!');
+          } catch (err) { toast(err.message || 'Import failed', 1); }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+      });
+
+      v.onclick = guard(async e => {
+        const g = e.target.dataset.g;
+        if (!g || !confirm('Remove grade ' + g + '?')) return;
+        await api('/grades/' + encodeURIComponent(g), 'DELETE');
+        grades = await api('/grades');
+        draw();
+        toast('Grade removed');
+      });
+    };
+    draw();
+  }
+};
+
+/* ---------- LOG PAGE WITH MOBILE CARD VIEW & VIRTUAL PAGINATION ---------- */
+async function renderLogPage(v, type) {
+  const sale = type === 'sale', who = sale ? 'Buyer' : 'Seller';
+  let rows = [];
+  let displayLimit = 35;
+
+  v.innerHTML = `
+    <div class="card">
+      <h2>
+        <span>${sale ? 'Sales' : 'Purchase'} Log</span>
+        <button class="btn s sm" id="btn-toggle-view" style="font-size:12px">📱 Mobile Cards</button>
+      </h2>
+      <div class="row" id="flt">
+        <div><label>From</label><input type="date" id="lf"></div>
+        <div><label>To</label><input type="date" id="lt"></div>
+        <div>
+          <label>Grade</label>
+          <select id="lg">
+            <option value="">All grades</option>
+            ${grades.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label>Search ${who}</label>
+          <input id="lq" placeholder="Filter by name...">
+        </div>
+        <button class="btn s sm" id="lc" style="align-self:flex-end">Clear Filters</button>
+      </div>
+
+      <div class="row noprint" style="margin-top:10px">
+        <button class="btn s sm" id="c">⬇ Download CSV</button>
+        <button class="btn sm" id="p">📄 Download PDF</button>
+        <button class="btn s sm" onclick="print()">🖨️ Print</button>
+      </div>
+
+      <!-- DESKTOP TABLE VIEW -->
+      <div class="tw tw-desktop" id="tb-desktop" style="margin-top:12px"></div>
+
+      <!-- MOBILE CARDS VIEW -->
+      <div class="m-cards" id="tb-mobile" style="margin-top:12px"></div>
+
+      <div id="load-more-container"></div>
+      <p class="tot" id="log-tot"></p>
+    </div>
+  `;
+
+  let forceCards = window.innerWidth <= 768;
+  const updateViewToggle = () => {
+    $('#btn-toggle-view').textContent = forceCards ? '📊 Table View' : '📱 Card View';
+    $('#tb-desktop').style.display = forceCards ? 'none' : 'block';
+    $('#tb-mobile').style.display = forceCards ? 'block' : 'none';
+  };
+  $('#btn-toggle-view').onclick = () => {
+    forceCards = !forceCards;
+    updateViewToggle();
+  };
+
+  const flat = () => rows.flatMap(t => t.lines.map(l => [fmt(t.date), t.party, l.grade, num(l.qty), t.notes || '']));
+
+  const renderCurrentRows = () => {
+    const visible = rows.slice(0, displayLimit);
+
+    // Table view
+    $('#tb-desktop').innerHTML = visible.length ? `
+      <table>
+        <thead><tr><th>Date</th><th>${who}</th><th>Items (BKT)</th><th>Notes</th><th class="noprint">Actions</th></tr></thead>
+        <tbody>
+          ${visible.map(t => `
+            <tr>
+              <td><b>${fmt(t.date)}</b></td>
+              <td>${esc(t.party)}</td>
+              <td>${t.lines.map(l => `<span class="chip">${esc(l.grade)}<em>${num(l.qty)}</em></span>`).join('')}</td>
+              <td style="color:var(--mu);font-size:13px">${esc(t.notes || '—')}</td>
+              <td class="noprint" style="white-space:nowrap">
+                <button class="btn s sm" data-e="${t._id}">✏️</button>
+                <button class="btn d sm" data-x="${t._id}">✕</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    ` : '<p style="color:var(--mu);padding:14px 0">No entries match your filters.</p>';
+
+    // Mobile Cards view
+    $('#tb-mobile').innerHTML = visible.length ? visible.map(t => `
+      <div class="tx-card">
+        <div class="tx-card-head">
+          <div class="tx-card-party">${esc(t.party)}</div>
+          <span class="badge ${sale ? 's' : 'p'}">${sale ? 'Sale' : 'Purchase'}</span>
+        </div>
+        <div class="tx-card-date">📅 ${fmt(t.date)}</div>
+        <div class="tx-card-items">
+          ${t.lines.map(l => `<span class="chip">${esc(l.grade)}<em>${num(l.qty)} BKT</em></span>`).join('')}
+        </div>
+        ${t.notes ? `<div class="tx-card-notes">📝 ${esc(t.notes)}</div>` : ''}
+        <div class="tx-card-actions noprint">
+          <button class="btn s sm" data-e="${t._id}">✏️ Edit</button>
+          <button class="btn d sm" data-x="${t._id}">🗑️ Delete</button>
+        </div>
+      </div>
+    `).join('') : '<p style="color:var(--mu);padding:14px 0">No entries match your filters.</p>';
+
+    // Load more button for mobile performance
+    if (rows.length > displayLimit) {
+      $('#load-more-container').innerHTML = `
+        <button class="load-more-btn" id="btn-more">
+          Showing ${displayLimit} of ${rows.length} entries — Tap to load more ↓
+        </button>
+      `;
+      $('#btn-more').onclick = () => {
+        displayLimit += 35;
+        renderCurrentRows();
+      };
+    } else {
+      $('#load-more-container').innerHTML = '';
+    }
+
+    const totalQty = num(rows.reduce((a, t) => a + t.lines.reduce((x, l) => x + (Number(l.qty) || 0), 0), 0));
+    $('#log-tot').textContent = `Total: ${totalQty} BKT across ${rows.length} entries`;
+    updateViewToggle();
+  };
+
+  const load = guard(async () => {
+    const p = new URLSearchParams({
+      type,
+      from: $('#lf').value,
+      to: $('#lt').value,
+      grade: $('#lg').value,
+      q: $('#lq').value
+    });
+    displayLimit = 35;
+    rows = await api('/tx?' + p);
+    renderCurrentRows();
+  });
+
+  $('#flt').oninput = load;
+  $('#lc').onclick = () => {
+    $('#lf').value = $('#lt').value = $('#lg').value = $('#lq').value = '';
+    load();
+  };
+
+  const handleAction = guard(async e => {
+    const id = e.target.dataset.e || e.target.dataset.x;
+    if (!id) return;
+    if (e.target.dataset.x) {
+      if (confirm('Delete this entry permanently from database?')) {
+        await api('/tx/' + id, 'DELETE');
+        toast('Entry deleted');
+        load();
+      }
+      return;
+    }
+    openModal('');
+    const m = await entryForm(type, rows.find(t => t._id === id), () => { closeModal(); load(); });
+    $('#mbody').innerHTML = '';
+    $('#mbody').append(m);
+  });
+
+  $('#tb-desktop').onclick = handleAction;
+  $('#tb-mobile').onclick = handleAction;
+
+  const H = ['Date', who, 'Grade', 'Qty (BKT)', 'Notes'];
+  $('#c').onclick = () => csv(H, flat(), type + '-log');
+  $('#p').onclick = () => {
+    const f = flat();
+    pdf(
+      (sale ? 'Sales' : 'Purchase') + ' Log',
+      H,
+      [...f, ['Total', '', '', num(f.reduce((a, r) => a + r[3], 0)), '']],
+      type + '-log',
+      ($('#lf').value || $('#lt').value) ? 'Period: ' + (fmt($('#lf').value) || 'start') + ' to ' + (fmt($('#lt').value) || 'today') : 'All dates'
+    );
+  };
+
+  load();
+}
+
+/* ---------- SEARCH PAGE (OPTIMIZED) ---------- */
+let presel = [];
+document.addEventListener('click', e => {
+  const g = e.target.closest('.g[data-g]');
+  if (g) {
+    presel = [g.dataset.g];
+    go('search');
+  }
+});
+
+async function searchPage(v) {
+  const sel = new Set(presel);
+  presel = [];
+  let rows = [];
+
+  v.innerHTML = `
+    <div class="card">
+      <h2>Search Records by Grade</h2>
+      <label>Tap grade pills to filter (None selected = all grades):</label>
+      <div id="gc" style="max-height:120px;overflow-y:auto;padding-bottom:4px">
+        ${grades.map(g => `<button type="button" class="pill ${sel.has(g) ? 'on' : ''}" data-g="${esc(g)}">${esc(g)}</button>`).join('')}
+      </div>
+
+      <div class="row" id="sf" style="margin-top:14px">
+        <div>
+          <label>Type</label>
+          <select id="st">
+            <option value="">All (Purchases & Sales)</option>
+            <option value="purchase">Purchases Only</option>
+            <option value="sale">Sales Only</option>
+          </select>
+        </div>
+        <div><label>From Date</label><input type="date" id="d1"></div>
+        <div><label>To Date</label><input type="date" id="d2"></div>
+        <div><label>Min Qty (BKT)</label><input type="number" inputmode="decimal" id="q1" min="0" step="any" placeholder="0"></div>
+        <div><label>Max Qty (BKT)</label><input type="number" inputmode="decimal" id="q2" min="0" step="any" placeholder="Max"></div>
+      </div>
+
+      <div class="row" id="sg">
+        <div style="flex:2">
+          <label>Party Name</label>
+          <input id="sq" placeholder="Filter buyer or seller...">
+        </div>
+        <div style="flex:1">
+          <label>Sort By</label>
+          <select id="so">
+            <option value="date_desc">Newest First</option>
+            <option value="date_asc">Oldest First</option>
+            <option value="qty_desc">Largest Qty</option>
+            <option value="qty_asc">Smallest Qty</option>
+          </select>
+        </div>
+      </div>
+      <div class="row noprint" style="margin-top:6px">
+        <button class="btn s sm" data-r="7">Last 7 Days</button>
+        <button class="btn s sm" data-r="m">This Month</button>
+        <button class="btn s sm" data-r="y">This Year</button>
+        <button class="btn s sm" data-r="x">Reset Filters</button>
+      </div>
+    </div>
+    <div id="sres"></div>
+  `;
+
+  const load = guard(async () => {
+    const a = $('#d1').value, b = $('#d2').value;
+    if (a && b && a > b) throw new Error('"From date" cannot be after "To date"');
+    const p = new URLSearchParams({
+      grades: [...sel].join(','),
+      type: $('#st').value,
+      from: a,
+      to: b,
+      min: $('#q1').value,
+      max: $('#q2').value,
+      q: $('#sq').value,
+      sort: $('#so').value
+    });
+    rows = await api('/search?' + p);
+    const P = rows.filter(r => r.type === 'purchase').reduce((x, r) => x + r.qty, 0);
+    const S = rows.filter(r => r.type === 'sale').reduce((x, r) => x + r.qty, 0);
+
+    $('#sres').innerHTML = `
+      <div class="stats">
+        <div class="stat"><span>Matching</span><b>${rows.length}</b><small>records found</small></div>
+        <div class="stat"><span>Purchased</span><b class="pos">+${num(P)}</b><small>BKT</small></div>
+        <div class="stat"><span>Sold</span><b class="neg">-${num(S)}</b><small>BKT</small></div>
+        <div class="stat"><span>Net Movement</span><b>${num(P - S)}</b><small>BKT</small></div>
+      </div>
+
+      <div class="card">
+        <div class="row noprint">
+          <button class="btn s sm" id="c">⬇ Download CSV</button>
+          <button class="btn sm" id="p">📄 Download PDF</button>
+          <button class="btn s sm" onclick="print()">🖨️ Print</button>
+        </div>
+
+        ${rows.length ? `
+          <div class="tw" style="margin-top:12px">
+            <table>
+              <thead><tr><th>Date</th><th>Type</th><th>Name</th><th>Grade</th><th>Qty (BKT)</th><th>Balance After</th><th>Notes</th><th class="noprint">Actions</th></tr></thead>
+              <tbody>
+                ${rows.map(r => `
+                  <tr>
+                    <td><b>${fmt(r.date)}</b></td>
+                    <td><span class="badge ${r.type === 'sale' ? 's' : 'p'}">${r.type === 'sale' ? 'Sale' : 'Purchase'}</span></td>
+                    <td>${esc(r.party)}</td>
+                    <td><span class="chip">${esc(r.grade)}</span></td>
+                    <td><b>${num(r.qty)}</b></td>
+                    <td>${num(r.bal)}</td>
+                    <td style="color:var(--mu);font-size:13px">${esc(r.notes || '—')}</td>
+                    <td class="noprint"><button class="btn s sm" data-e="${r.id}">✏️ Edit</button></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : '<p style="color:var(--mu);padding:14px 0">No records match your criteria.</p>'}
+      </div>
+    `;
+
+    const H = ['Date', 'Type', 'Name', 'Grade', 'Qty (BKT)', 'Balance after'];
+    const R = () => rows.map(r => [fmt(r.date), r.type === 'sale' ? 'Sale' : 'Purchase', r.party, r.grade, num(r.qty), num(r.bal)]);
+    if (rows.length) {
+      $('#c').onclick = () => csv(H, R(), 'search');
+      $('#p').onclick = () => pdf(
+        'Grade Search',
+        H,
+        [...R(), ['Total', '', '', '', num(rows.reduce((x, r) => x + r.qty, 0)), '']],
+        'search',
+        (sel.size ? 'Grades: ' + [...sel].join(', ') : 'All grades') + (a || b ? '  |  ' + (fmt(a) || 'start') + ' to ' + (fmt(b) || 'today') : '')
+      );
+    }
+  });
+
+  $('#gc').onclick = e => {
+    const g = e.target.dataset.g;
+    if (!g) return;
+    sel.has(g) ? sel.delete(g) : sel.add(g);
+    e.target.classList.toggle('on');
+    load();
+  };
+
+  v.oninput = v.onchange = e => {
+    if (e.target.closest('#sf,#sg')) load();
+  };
+
+  $('#sg').onclick = e => {
+    const r = e.target.dataset.r;
+    if (!r) return;
+    const n = new Date(), d = new Date();
+    if (r === '7') d.setDate(n.getDate() - 6);
+    else if (r === 'm') d.setDate(1);
+    else if (r === 'y') { d.setMonth(0); d.setDate(1); }
+    if (r === 'x') {
+      sel.clear();
+      document.querySelectorAll('#gc .pill').forEach(x => x.classList.remove('on'));
+      $('#d1').value = $('#d2').value = $('#q1').value = $('#q2').value = $('#sq').value = $('#st').value = '';
+    } else {
+      $('#d1').value = iso(d);
+      $('#d2').value = today();
+    }
+    load();
+  };
+
+  $('#sres').onclick = guard(async e => {
+    const id = e.target.dataset.e;
+    if (!id) return;
+    const tx = await api('/tx/' + id);
+    openModal('');
+    const m = await entryForm(tx.type, tx, () => { closeModal(); load(); });
+    $('#mbody').innerHTML = '';
+    $('#mbody').append(m);
+  });
+
+  load();
+}
+
+/* ---------- NAVIGATION ROUTING ---------- */
+const T = {
+  dash: 'Dashboard & Stock',
+  search: 'Search by Grade',
+  buy: 'Add Stock (Purchase)',
+  sell: 'Record Sale',
+  plog: 'Purchase Log',
+  slog: 'Sales Log',
+  rep: 'Stock Movement Reports',
+  set: 'Settings & Backup'
+};
+
+async function go(p) {
+  // Update desktop tabs
+  document.querySelectorAll('.desktop-links button').forEach(b => b.classList.toggle('on', b.dataset.p === p));
+  // Update mobile bottom tabs
+  document.querySelectorAll('.b-tab').forEach(b => b.classList.toggle('on', b.dataset.p === p));
+
+  $('#title').textContent = T[p] || 'CashewTrack';
+  const v = $('#view');
+  v.onclick = v.onchange = null;
+  v.innerHTML = '';
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  try {
+    await pages[p](v);
+  } catch (e) {
+    toast(e.message, 1);
+  }
+}
+
+// Click handlers for top and bottom navs
+document.querySelector('.desktop-links').onclick = e => {
+  if (e.target.dataset.p) go(e.target.dataset.p);
+};
+document.querySelector('.bottom-nav').onclick = e => {
+  const btn = e.target.closest('.b-tab');
+  if (btn && btn.dataset.p) go(btn.dataset.p);
+};
+
+// INITIALIZATION
+(async () => {
+  $('#today').innerHTML = `📅 ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+  try {
+    [grades, { low }] = await Promise.all([api('/grades'), api('/settings')]);
+  } catch (e) {
+    toast(e.message, 1);
+  }
+  go('dash');
+})();
+</script>
+</body>
+</html>
