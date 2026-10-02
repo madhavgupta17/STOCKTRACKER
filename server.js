@@ -57,6 +57,20 @@ app.delete('/api/grades/:name', h(async (q, s) => {
   if (await Tx.exists({ 'lines.grade': q.params.name })) throw new Error('This grade has entries, so it cannot be removed');
   await Grade.deleteOne({ name: q.params.name }); s.json({ ok: 1 });
 }));
+app.patch('/api/grades/:name', h(async (q, s) => {
+  const oldName = q.params.name;
+  const newName = String(q.body.name || '').trim().toUpperCase();
+  if (!newName) throw new Error('New grade name is required');
+  if (newName === oldName) return s.json({ ok: 1 });
+  if (await Grade.exists({ name: newName })) throw new Error('Grade "' + newName + '" already exists');
+  await Grade.updateOne({ name: oldName }, { name: newName });
+  await Tx.updateMany(
+    { 'lines.grade': oldName },
+    { $set: { 'lines.$[el].grade': newName } },
+    { arrayFilters: [{ 'el.grade': oldName }] }
+  );
+  s.json({ ok: 1 });
+}));
 
 app.get('/api/settings', h(async (q, s) => { const t = await Setting.findOne({ key: 'low' }); s.json({ low: t ? t.value : 5 }); }));
 app.put('/api/settings', h(async (q, s) => { await Setting.updateOne({ key: 'low' }, { value: Number(q.body.low) || 0 }, { upsert: true }); s.json({ ok: 1 }); }));
