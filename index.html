@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<title>CashewTrack — Inventory & Sales</title>
+<title>GodownStock — Company & Category Wise Stock</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -27,477 +27,259 @@
   --shadow: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
 }
-
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { scroll-behavior: smooth; }
 body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--tx);
+  margin: 0; background: var(--bg); color: var(--tx);
   font: 15px/1.45 'IBM Plex Sans', -apple-system, sans-serif;
   min-height: 100vh;
   padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
 }
+h1,h2,h3,.brand { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.02em; }
 
-h1, h2, h3, .brand { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.02em; }
-
-/* TOP NAV (Desktop + Mobile Header) */
+/* TOP NAV */
 nav.top-nav {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 40;
+  background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: 60px;
 }
-
 .brand-wrap { display: flex; align-items: center; gap: 8px; }
 .brand-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--gold);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-  font-weight: 700;
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--gold); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 700;
 }
 .brand { font-size: 20px; font-weight: 700; color: var(--gold); }
-
 .desktop-links { display: flex; align-items: center; gap: 4px; overflow-x: auto; }
 .desktop-links button {
-  background: none;
-  border: 0;
-  border-bottom: 3px solid transparent;
-  color: var(--mu);
-  padding: 18px 12px 15px;
-  font: 600 13.5px 'IBM Plex Sans';
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.15s, border-color 0.15s;
+  background: none; border: 0; border-bottom: 3px solid transparent;
+  color: var(--mu); padding: 18px 12px 15px;
+  font: 600 13.5px 'IBM Plex Sans'; cursor: pointer;
+  white-space: nowrap; transition: color 0.15s, border-color 0.15s;
 }
 .desktop-links button:hover { color: var(--tx); }
 .desktop-links button.on { color: var(--gold); border-bottom-color: var(--gold); }
 
-/* MOBILE BOTTOM NAVIGATION BAR */
+/* MOBILE BOTTOM NAV */
 .bottom-nav {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(16px);
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  background: rgba(255,255,255,0.96); backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--line);
   padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
-  justify-content: space-around;
-  align-items: center;
+  justify-content: space-around; align-items: center;
   box-shadow: 0 -4px 16px rgba(0,0,0,0.04);
 }
 .b-tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  background: none;
-  border: none;
-  padding: 5px 1px;
-  color: var(--mu);
-  font: 500 10px 'IBM Plex Sans';
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.15s ease;
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px; background: none; border: none;
+  padding: 5px 1px; color: var(--mu); font: 500 10px 'IBM Plex Sans';
+  cursor: pointer; border-radius: 8px; transition: all 0.15s ease;
 }
 .b-tab svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
 .b-tab.on { color: var(--gold); font-weight: 700; }
 .b-tab.on svg { stroke: var(--gold); stroke-width: 2.3; }
 .b-tab:active { transform: scale(0.93); }
 
-/* MAIN CONTAINER */
-main {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px 20px;
-}
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
+/* MAIN */
+main { max-width: 1300px; margin: 0 auto; padding: 24px 20px; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
 h1 { margin: 0; font-size: 26px; font-weight: 700; color: var(--tx); }
 .date-pill {
-  color: var(--mu);
-  font-size: 13px;
-  font-weight: 500;
-  background: #fff;
-  border: 1px solid var(--line);
-  padding: 6px 14px;
-  border-radius: 99px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  color: var(--mu); font-size: 13px; font-weight: 500;
+  background: #fff; border: 1px solid var(--line);
+  padding: 6px 14px; border-radius: 99px;
+  display: inline-flex; align-items: center; gap: 6px;
 }
 
-/* CARDS & PANELS */
+/* CARDS */
 .card {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  margin-bottom: 18px;
-  box-shadow: var(--shadow);
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius-lg); padding: 20px;
+  margin-bottom: 18px; box-shadow: var(--shadow);
 }
 .card h2 {
-  margin: 0 0 16px;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--tx);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  margin: 0 0 16px; font-size: 18px; font-weight: 700; color: var(--tx);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-wrap: wrap;
 }
 
-/* STATS CARDS */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-  margin-bottom: 18px;
-}
-.stat {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 16px;
-  box-shadow: var(--shadow);
-}
+/* STATS */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
 .stat span { color: var(--mu); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 .stat b { display: block; font: 700 30px/1.1 'Space Grotesk'; margin: 6px 0 2px; }
 .stat small { color: var(--mu); font-size: 12px; }
 
-/* SEARCH & FILTER CONTROLS */
-.filter-bar {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
+/* MATRIX TABLE */
+.matrix-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+.matrix-table thead th {
+  background: var(--gold); color: #fff;
+  padding: 11px 14px; text-align: center;
+  font: 700 11.5px 'IBM Plex Sans';
+  text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap;
 }
-.search-input-wrap {
-  position: relative;
-  flex: 1;
-  min-width: 180px;
+.matrix-table thead th:first-child { text-align: left; min-width: 130px; }
+.matrix-table thead th:last-child { border-left: 2px solid rgba(255,255,255,0.3); }
+.matrix-table tbody td {
+  padding: 10px 14px; text-align: center;
+  border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 500;
 }
-.search-input-wrap input {
-  padding-left: 38px;
+.matrix-table tbody td:first-child { text-align: left; font-weight: 700; color: var(--tx); }
+.matrix-table tbody td:last-child { border-left: 2px solid var(--line); font-weight: 700; }
+.matrix-table tbody tr:hover td { background: #f8fbf9; }
+.matrix-table tbody tr.row-out td { background: var(--red-soft); }
+.matrix-table tbody tr.row-out td:first-child { color: var(--red); }
+.matrix-table tbody tr.row-low td { background: var(--amber-soft); }
+.matrix-table tbody tr.row-low td:first-child { color: var(--amber); }
+.matrix-table td.has-val { color: var(--gold); font-weight: 700; font-size: 15px; }
+.matrix-table td.no-val { color: #c5d0cc; }
+.matrix-table tfoot tr { background: var(--gold-soft); }
+.matrix-table tfoot td {
+  padding: 12px 14px; text-align: center;
+  font: 700 14px 'IBM Plex Sans'; color: var(--gold);
+  border-top: 2px solid var(--gold);
 }
-.search-icon-inside {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--mu);
-  pointer-events: none;
-  font-size: 15px;
-}
-
-/* GRIDS FOR GRADES (Dashboard) */
-.grade-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 10px;
-  max-height: 480px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-.grade-grid::-webkit-scrollbar { width: 5px; }
-.grade-grid::-webkit-scrollbar-thumb { background: #d0dad5; border-radius: 4px; }
-
-.g {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 12px 10px;
-  text-align: center;
-  cursor: pointer;
-  background: #fafcfb;
-  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 90px;
-}
-.g:active { transform: scale(0.97); }
-.g:hover { border-color: var(--gold); box-shadow: 0 2px 8px rgba(14,124,95,0.1); }
-.g i { font-style: normal; color: var(--mu); font-weight: 600; font-size: 13px; margin-bottom: 2px; }
-.g b { display: block; font: 700 24px/1.2 'Space Grotesk'; color: var(--tx); }
-.g small { color: var(--mu); font-size: 11px; }
-
-.g.low { background: var(--amber-soft); border-color: #f0c377; }
-.g.low b { color: var(--amber); }
-.g.out { background: var(--red-soft); border-color: #f7b4ad; opacity: 0.85; }
-.g.out b { color: var(--red); }
+.matrix-table tfoot td:first-child { text-align: left; }
+.matrix-table tfoot td:last-child { border-left: 2px solid var(--gold); }
 
 /* ALERTS */
 .alert {
-  border: 1px solid #f7b4ad;
-  background: var(--red-soft);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  margin-bottom: 8px;
-  color: #8c1e13;
-  font-size: 13.5px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  border: 1px solid #f7b4ad; background: var(--red-soft);
+  border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px;
+  color: #8c1e13; font-size: 13.5px; display: flex; align-items: center; gap: 10px;
 }
 .alert.w { border-color: #f0c377; background: var(--amber-soft); color: #7f4b00; }
 
 .two { display: grid; grid-template-columns: 3fr 2fr; gap: 18px; }
 
-/* FORMS & INPUTS - OPTIMIZED FOR MOBILE */
-label {
-  display: block;
-  font-size: 12.5px;
-  color: var(--mu);
-  margin-bottom: 6px;
-  font-weight: 600;
-}
+/* FORMS */
+label { display: block; font-size: 12.5px; color: var(--mu); margin-bottom: 6px; font-weight: 600; }
 input, select, textarea {
-  width: 100%;
-  background: #ffffff;
-  border: 1px solid #c8d3ce;
-  color: var(--tx);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  font-size: 16px; /* Prevents auto-zoom on iOS */
-  font-family: inherit;
+  width: 100%; background: #ffffff; border: 1px solid #c8d3ce; color: var(--tx);
+  border-radius: var(--radius); padding: 12px 14px;
+  font-size: 16px; font-family: inherit;
   transition: border-color 0.15s, box-shadow 0.15s;
-  -webkit-appearance: none;
-  appearance: none;
+  -webkit-appearance: none; appearance: none;
 }
 select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2361726a' d='M1.41 0L6 4.58L10.59 0L12 1.41l-6 6l-6-6z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-  padding-right: 36px;
+  background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
 }
 input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(14,124,95,0.15);
+  outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(14,124,95,0.15);
 }
-
-.row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  margin-bottom: 14px;
-}
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
 .row > div { flex: 1; min-width: 140px; }
 
 /* BUTTONS */
 .btn {
-  background: var(--gold);
-  color: #ffffff;
-  border: 0;
-  border-radius: var(--radius);
-  padding: 12px 20px;
-  font: 600 14.5px 'IBM Plex Sans';
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 44px;
-  transition: background 0.15s, transform 0.1s;
+  background: var(--gold); color: #fff; border: 0; border-radius: var(--radius);
+  padding: 12px 20px; font: 600 14.5px 'IBM Plex Sans'; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 44px; transition: background 0.15s, transform 0.1s; white-space: nowrap;
 }
 .btn:hover { background: var(--gold-hover); }
 .btn:active { transform: scale(0.97); }
-.btn.s { background: #ffffff; color: var(--tx); border: 1px solid #c8d3ce; }
+.btn.s { background: #fff; color: var(--tx); border: 1px solid #c8d3ce; }
 .btn.s:hover { background: #f6f8f7; border-color: #adbdb5; }
 .btn.d { background: #fff; color: var(--red); border: 1px solid #f7b4ad; }
 .btn.d:hover { background: var(--red-soft); }
 .btn.sm { padding: 7px 14px; font-size: 13px; min-height: 34px; border-radius: 8px; }
 .btn.block { width: 100%; }
 
-/* ENTRY FORM ROW */
+/* LINE ITEM ROW */
 .ln {
-  display: grid;
-  grid-template-columns: 2fr 1.2fr auto;
-  gap: 10px;
-  margin-bottom: 10px;
-  align-items: center;
-  background: #fbfdfc;
-  padding: 8px;
-  border-radius: var(--radius);
+  display: grid; grid-template-columns: 2fr 1.2fr auto;
+  gap: 10px; margin-bottom: 10px; align-items: center;
+  background: #fbfdfc; padding: 8px; border-radius: var(--radius);
   border: 1px solid var(--line-light);
 }
 
-/* CHIPS, PILLS, BADGES */
+/* CHIPS & BADGES */
 .chip {
-  display: inline-flex;
-  align-items: center;
-  background: var(--gold-soft);
-  color: var(--gold);
-  border-radius: 8px;
-  padding: 4px 10px;
-  margin: 0 6px 4px 0;
-  font-size: 13px;
-  font-weight: 600;
+  display: inline-flex; align-items: center; background: var(--gold-soft);
+  color: var(--gold); border-radius: 8px; padding: 4px 10px;
+  margin: 0 6px 4px 0; font-size: 13px; font-weight: 600;
 }
 .chip em { font-style: normal; color: var(--tx); margin-left: 6px; font-weight: 700; }
-
-.pill {
-  border: 1px solid #c8d3ce;
-  background: #fff;
-  border-radius: 99px;
-  padding: 7px 14px;
-  font: 500 13px 'IBM Plex Sans';
-  cursor: pointer;
-  margin: 0 6px 6px 0;
-  display: inline-block;
-  transition: all 0.15s;
-}
-.pill:active { transform: scale(0.94); }
-.pill.on { background: var(--gold); color: #fff; border-color: var(--gold); font-weight: 600; }
-
-.badge {
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 6px;
-  padding: 3px 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
+.badge { font-size: 12px; font-weight: 700; border-radius: 6px; padding: 3px 8px; text-transform: uppercase; letter-spacing: 0.03em; }
 .badge.p { background: var(--gold-soft); color: var(--gold); }
 .badge.s { background: var(--red-soft); color: var(--red); }
 .pos { color: var(--gold); }
 .neg { color: var(--red); }
 .tot { font-weight: 700; font-size: 15px; margin-top: 14px; }
 
-/* RESPONSIVE TABLES & MOBILE TRANSACTION CARDS */
+/* TABLE */
 .tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; min-width: 500px; }
 th { text-align: left; color: var(--mu); font-size: 12px; font-weight: 600; padding: 10px 8px; border-bottom: 2px solid var(--line); text-transform: uppercase; letter-spacing: 0.03em; }
 td { padding: 12px 8px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 14px; }
 tr:hover td { background: #fafcfb; }
-
-/* MOBILE CARD LOG ITEMS */
 .m-cards { display: none; }
-.tx-card {
-  background: #ffffff;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 14px;
-  margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-}
-.tx-card-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
+.tx-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+.tx-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .tx-card-party { font-weight: 700; font-size: 15px; color: var(--tx); }
 .tx-card-date { color: var(--mu); font-size: 12.5px; }
 .tx-card-items { margin: 8px 0; }
 .tx-card-notes { font-size: 12.5px; color: var(--mu); margin-bottom: 8px; font-style: italic; }
 .tx-card-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+.load-more-btn { width: 100%; margin-top: 14px; padding: 12px; background: #fff; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--gold); font-weight: 600; cursor: pointer; text-align: center; }
+.load-more-btn:active { background: var(--gold-soft); }
+
+/* COMPANY BADGE for purchase log */
+.comp-tag {
+  display: inline-block; background: #e8f4f0; color: var(--gold);
+  border: 1px solid var(--gold-soft); border-radius: 6px;
+  padding: 2px 8px; font-size: 12px; font-weight: 700;
+}
 
 /* MODAL */
 #modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  overflow-y: auto;
-  padding: 20px 16px;
-  z-index: 100;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center;
+  overflow-y: auto; padding: 20px 16px; z-index: 100;
 }
-#modal .card {
-  width: min(620px, 100%);
-  margin: auto;
-  box-shadow: var(--shadow-lg);
-  max-height: 90vh;
-  overflow-y: auto;
-}
+#modal .card { width: min(640px,100%); margin: auto; box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto; }
 
 /* TOAST */
 #toast {
-  position: fixed;
-  bottom: calc(85px + env(safe-area-inset-bottom, 0px));
-  right: 20px;
-  background: #111b17;
-  color: #fff;
-  padding: 12px 20px;
-  border-radius: var(--radius);
-  display: none;
-  font-weight: 600;
-  font-size: 14px;
-  z-index: 120;
-  box-shadow: var(--shadow-lg);
-  animation: slideUp 0.2s ease;
+  position: fixed; bottom: calc(85px + env(safe-area-inset-bottom,0px)); right: 20px;
+  background: #111b17; color: #fff; padding: 12px 20px; border-radius: var(--radius);
+  display: none; font-weight: 600; font-size: 14px; z-index: 120;
+  box-shadow: var(--shadow-lg); animation: slideUp 0.2s ease;
 }
 #toast.e { background: var(--red); }
 @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* PAGINATION BUTTON */
-.load-more-btn {
-  width: 100%;
-  margin-top: 14px;
-  padding: 12px;
-  background: #ffffff;
-  border: 1px dashed var(--line);
-  border-radius: var(--radius);
-  color: var(--gold);
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-}
-.load-more-btn:active { background: var(--gold-soft); }
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.search-input-wrap { position: relative; flex: 1; min-width: 180px; }
+.search-input-wrap input { padding-left: 38px; }
+.search-icon-inside { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--mu); pointer-events: none; font-size: 15px; }
 
-/* MOBILE BREAKPOINT */
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .two { grid-template-columns: 1fr; gap: 14px; }
+}
 @media (max-width: 768px) {
-  body { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+  body { padding-bottom: calc(80px + env(safe-area-inset-bottom,0px)); }
   .desktop-links { display: none; }
   .bottom-nav { display: flex; }
   main { padding: 16px 14px; }
   h1 { font-size: 22px; }
-  .two { grid-template-columns: 1fr; gap: 14px; }
   .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
   .stat b { font-size: 26px; }
-  .grade-grid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 8px; max-height: 400px; }
-  .g { min-height: 80px; padding: 10px 6px; }
-  .g b { font-size: 20px; }
   .ln { grid-template-columns: 1.5fr 1fr auto; gap: 6px; padding: 6px; }
   .ln input, .ln select { padding: 10px 8px; font-size: 15px; }
-
-  /* Switch Table to Cards on Mobile */
   .tw-desktop { display: none; }
   .m-cards { display: block; }
 }
-
 @media print {
   nav.top-nav, .bottom-nav, .noprint, #modal { display: none !important; }
   body { padding: 0; background: #fff; }
@@ -506,11 +288,11 @@ tr:hover td { background: #fafcfb; }
 </head>
 <body>
 
-<!-- TOP APP HEADER -->
+<!-- TOP NAV -->
 <nav class="top-nav">
   <div class="brand-wrap">
-    <div class="brand-icon">🥜</div>
-    <div class="brand">CashewTrack</div>
+    <div class="brand-icon">📦</div>
+    <div class="brand">GodownStock</div>
   </div>
   <div class="desktop-links">
     <button data-p="dash">Dashboard</button>
@@ -524,15 +306,12 @@ tr:hover td { background: #fafcfb; }
   <span class="date-pill" id="today"></span>
 </nav>
 
-<!-- MAIN CONTENT -->
 <main>
-  <header>
-    <h1 id="title">Dashboard</h1>
-  </header>
+  <header><h1 id="title">Dashboard</h1></header>
   <div id="view"></div>
 </main>
 
-<!-- MOBILE BOTTOM NAVIGATION BAR -->
+<!-- MOBILE BOTTOM NAV -->
 <nav class="bottom-nav">
   <button class="b-tab on" data-p="dash">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
@@ -547,7 +326,7 @@ tr:hover td { background: #fafcfb; }
     <span>Sell</span>
   </button>
   <button class="b-tab" data-p="plog">
-    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="12" y1="17" x2="8" y2="17"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
     <span>Buy Log</span>
   </button>
   <button class="b-tab" data-p="slog">
@@ -568,361 +347,450 @@ tr:hover td { background: #fafcfb; }
 <div id="toast"></div>
 
 <script>
-const $ = s => document.querySelector(s);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const pad = n => String(n).padStart(2, '0');
+const $  = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const today = () => iso(new Date());
-const fmt = s => s ? s.split('-').reverse().join('/') : '';
-const num = n => Math.round((Number(n) || 0) * 100) / 100;
-let grades = [], low = 5;
+const fmt   = s => s ? s.split('-').reverse().join('/') : '';
+const num   = n => Math.round((Number(n)||0)*100)/100;
 
-// API HELPER
-async function api(u, m = 'GET', b) {
-  const r = await fetch('/api' + u, {
+let grades = [], companies = [], low = 5, lastMatrix = null;
+
+// ─── API HELPER ───────────────────────────────────────────────────────────────
+async function api(u, m='GET', b) {
+  const r = await fetch('/api'+u, {
     method: m,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {'Content-Type':'application/json'},
     body: b ? JSON.stringify(b) : undefined
   });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.error || 'Server error');
+  const j = await r.json().catch(()=>({}));
+  if (!r.ok) throw new Error(j.error||'Server error');
   return j;
 }
 
-function toast(t, e) {
+function toast(t,e) {
   const x = $('#toast');
-  x.textContent = t;
-  x.className = e ? 'e' : '';
+  x.textContent = t; x.className = e?'e':'';
   x.style.display = 'block';
-  clearTimeout(x.t);
-  x.t = setTimeout(() => x.style.display = 'none', 2800);
+  clearTimeout(x.t); x.t = setTimeout(()=>x.style.display='none', 2800);
 }
+const guard = f => async (...a) => { try { await f(...a); } catch(e) { toast(e.message,1); } };
 
-const guard = f => async (...a) => {
-  try { await f(...a); } catch (e) { toast(e.message, 1); }
-};
+function openModal(h) { $('#mbody').innerHTML = h; $('#modal').style.display='flex'; }
+function closeModal()  { $('#modal').style.display='none'; }
+$('#modal').onclick = e => { if(e.target.id==='modal') closeModal(); };
 
-function openModal(h) {
-  $('#mbody').innerHTML = h;
-  $('#modal').style.display = 'flex';
-}
-function closeModal() {
-  $('#modal').style.display = 'none';
-}
-$('#modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
+// ─── PDF — STOCK MATRIX (matches Excel format) ────────────────────────────────
+function stockMatrixPdf(data) {
+  const { categories, companies: comps, matrix: mat, compTotals, grandTotal } = data;
+  const doc = new jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
 
-// PDF & CSV EXPORTS
-function pdf(title, head, rows, name, sub) {
-  const d = new jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  d.setFontSize(13);
-  d.text(title, 14, 12);
-  d.setFontSize(7);
-  d.setTextColor(110);
-  d.text((sub ? sub + '  |  ' : '') + 'Generated ' + fmt(today()), 14, 17);
-  d.autoTable({
-    head: [head],
-    body: rows,
-    startY: 21,
-    headStyles: { fillColor: [14, 124, 95], fontSize: 7, cellPadding: 2, fontStyle: 'bold' },
-    bodyStyles: { fontSize: 7, cellPadding: 1.5 },
-    styles: { overflow: 'linebreak', lineWidth: 0.1, lineColor: [220, 220, 220] },
-    alternateRowStyles: { fillColor: [245, 250, 248] },
-    margin: { top: 21, left: 8, right: 8 },
-    didParseCell: h => { if (String(h.row.raw[0]).startsWith('Total')) h.cell.styles.fontStyle = 'bold'; }
+  // Title
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(18);
+  doc.setTextColor(14,100,76);
+  doc.text('GODOWN STOCK REPORT', 14, 16);
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(100);
+  const dateStr = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+  doc.text('Date: ' + dateStr + '   |   GodownStock Management', 14, 22);
+  doc.setTextColor(0);
+
+  const head = [['Cashew Category', ...comps, 'Total']];
+  const body = categories.map(cat => [
+    cat,
+    ...comps.map(c => mat[cat][c] > 0 ? num(mat[cat][c]).toString() : '-'),
+    mat[cat]._total > 0 ? num(mat[cat]._total).toString() : '-'
+  ]);
+  // Grand total row
+  body.push(['Total', ...comps.map(c => num(compTotals[c]).toString()), num(grandTotal).toString()]);
+
+  doc.autoTable({
+    head,
+    body,
+    startY: 26,
+    headStyles: {
+      fillColor: [14,124,95], textColor:[255,255,255],
+      fontStyle:'bold', fontSize:10, cellPadding:4, halign:'center'
+    },
+    bodyStyles: { fontSize:10, cellPadding:3.5, halign:'center' },
+    columnStyles: {
+      0: { halign:'left', fontStyle:'bold', cellWidth:38 }
+    },
+    styles: { overflow:'linebreak', lineWidth:0.1, lineColor:[200,215,210] },
+    alternateRowStyles: { fillColor:[245,251,248] },
+    didParseCell: (d) => {
+      // Bold total row (last)
+      if (d.row.index === body.length - 1) {
+        d.cell.styles.fontStyle  = 'bold';
+        d.cell.styles.fillColor  = [14,124,95];
+        d.cell.styles.textColor  = [255,255,255];
+      }
+      // Last column (Total) slight style
+      if (d.column.index === head[0].length - 1 && d.row.index < body.length - 1) {
+        d.cell.styles.fontStyle = 'bold';
+      }
+    }
   });
-  d.save(name + '-' + today() + '.pdf');
+
+  // Footer on each page
+  const pg = doc.internal.getNumberOfPages();
+  for (let i=1;i<=pg;i++) {
+    doc.setPage(i);
+    doc.setFontSize(7); doc.setTextColor(160);
+    doc.text('GodownStock — Cashew Stock Management System', 14, doc.internal.pageSize.height-6);
+    doc.text('Page '+i+' of '+pg, doc.internal.pageSize.width-28, doc.internal.pageSize.height-6);
+  }
+
+  doc.save('godown-stock-'+today()+'.pdf');
 }
 
-function csv(head, rows, name) {
-  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const b = new Blob([[head, ...rows].map(r => r.map(q).join(',')).join('\n')], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(b);
-  a.download = name + '-' + today() + '.csv';
-  a.click();
-}
-
-/* ---------- ENTRY FORM (OPTIMIZED FOR MOBILE TOUCH) ---------- */
-async function entryForm(type, tx, done) {
-  const [stock, parties] = await Promise.all([api('/stock'), api('/parties?type=' + type)]);
-  const avail = Object.fromEntries(stock.map(s => [s.grade, s.balance]));
-  const own = {};
-  if (tx) tx.lines.forEach(l => own[l.grade] = (own[l.grade] || 0) + l.qty);
-  const sale = type === 'sale', who = sale ? 'Buyer' : 'Seller';
-
-  const opts = g => `<option value="">Select grade</option>` + grades.map(x =>
-    `<option ${x === g ? 'selected' : ''} value="${esc(x)}">${esc(x)}${sale ? ` (${num(avail[x] || 0)} available)` : ''}</option>`
-  ).join('');
-
-  const line = l => `
-    <div class="ln">
-      <select>${opts(l?.grade)}</select>
-      <input type="number" inputmode="decimal" min="0" step="any" placeholder="Qty (BKT)" value="${l?.qty ?? ''}">
-      <button type="button" class="btn d sm" title="Remove item" style="padding:8px 12px;font-size:16px">✕</button>
+// ─── RENDER MATRIX TABLE (reusable) ──────────────────────────────────────────
+function renderMatrix(container, data) {
+  const { categories, companies: comps, matrix: mat, compTotals, grandTotal } = data;
+  container.innerHTML = `
+    <div class="tw">
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th>Cashew Category</th>
+            ${comps.map(c=>`<th>${esc(c)}</th>`).join('')}
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${categories.map(cat => {
+            const tot = mat[cat]._total;
+            const cls = tot <= 0 ? 'row-out' : tot < low ? 'row-low' : '';
+            return `<tr class="${cls}">
+              <td>${esc(cat)}</td>
+              ${comps.map(c => {
+                const v = mat[cat][c];
+                return `<td class="${v>0?'has-val':'no-val'}">${v>0?num(v):'-'}</td>`;
+              }).join('')}
+              <td class="${tot>0?'has-val':'no-val'}">${tot>0?num(tot):'-'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td><b>Total</b></td>
+            ${comps.map(c=>`<td><b>${num(compTotals[c])}</b></td>`).join('')}
+            <td><b>${num(grandTotal)}</b></td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
   `;
+}
+
+// ─── ENTRY FORM ────────────────────────────────────────────────────────────────
+async function entryForm(type, tx, done) {
+  const [stock, buyers] = await Promise.all([
+    api('/stock'),
+    type==='sale' ? api('/parties?type=sale') : Promise.resolve([])
+  ]);
+  const avail = Object.fromEntries(stock.map(s=>[s.grade, s.balance]));
+  const own   = {};
+  if (tx) tx.lines.forEach(l=>own[l.grade]=(own[l.grade]||0)+l.qty);
+  const sale = type==='sale';
+
+  const partyHtml = sale
+    ? `<input id="f-party" list="pl" value="${esc(tx?.party||'')}" placeholder="e.g. KUMAR TRADERS" autocomplete="off">
+       <datalist id="pl">${buyers.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>`
+    : `<select id="f-party">
+         <option value="">— Select Company / Supplier —</option>
+         ${companies.map(c=>`<option value="${esc(c)}"${tx?.party===c?' selected':''}>${esc(c)}</option>`).join('')}
+       </select>`;
+
+  const opts = g =>
+    `<option value="">— Select Category —</option>` +
+    grades.map(x =>
+      `<option${x===g?' selected':''} value="${esc(x)}">${esc(x)}${sale?' ('+num(avail[x]||0)+' avail)':''}</option>`
+    ).join('');
+
+  const lineHtml = l => `
+    <div class="ln">
+      <select>${opts(l?.grade)}</select>
+      <input type="number" inputmode="decimal" min="0" step="any" placeholder="Qty (BKT)" value="${l?.qty??''}">
+      <button type="button" class="btn d sm" title="Remove" style="padding:8px 12px;font-size:16px">✕</button>
+    </div>`;
 
   const w = document.createElement('div');
   w.innerHTML = `
-    <h2>${tx ? 'Edit' : 'New'} ${sale ? 'Sale' : 'Stock Entry'}</h2>
+    <h2>${tx?'Edit':'New'} ${sale?'Sale':'Stock Purchase'}</h2>
     <div class="row">
-      <div>
-        <label>Date</label>
-        <input type="date" id="f-date" value="${tx?.date || today()}">
-      </div>
-      <div>
-        <label>${who} Name</label>
-        <input id="f-party" list="pl" value="${esc(tx?.party || '')}" placeholder="${sale ? 'e.g. KUMAR RETAIL' : 'e.g. NUTBERRY'}">
-        <datalist id="pl">${parties.map(p => `<option value="${esc(p)}">`).join('')}</datalist>
-      </div>
+      <div><label>Date</label><input type="date" id="f-date" value="${tx?.date||today()}"></div>
+      <div><label>${sale?'Buyer Name':'Company / Supplier'}</label>${partyHtml}</div>
     </div>
-    <label>Items (Cashew Grades & Quantities)</label>
+    <label>Items — Categories &amp; Quantities</label>
     <div id="lines"></div>
-    <button type="button" class="btn s sm" id="add" style="margin-top:4px">+ Add Another Grade</button>
+    <button type="button" class="btn s sm" id="add-line" style="margin-top:4px">+ Add Another Category</button>
     <div style="margin-top:14px">
       <label>Notes (optional)</label>
-      <input id="f-notes" value="${esc(tx?.notes || '')}" placeholder="Optional details (e.g. 5 at home)">
+      <input id="f-notes" value="${esc(tx?.notes||'')}" placeholder="Optional notes">
     </div>
     <div class="row" style="margin-top:20px">
-      <button class="btn" id="save" style="flex:2">${tx ? 'Save Changes' : sale ? 'Record Sale' : 'Add Stock'}</button>
-      <button class="btn s" id="cancel" style="flex:1">${tx ? 'Cancel' : 'Clear'}</button>
+      <button class="btn" id="save-btn" style="flex:2">${tx?'Save Changes':sale?'Record Sale':'Add to Stock'}</button>
+      <button class="btn s" id="cancel-btn" style="flex:1">${tx?'Cancel':'Clear'}</button>
     </div>
   `;
 
   const L = w.querySelector('#lines');
-  const addLine = l => { L.insertAdjacentHTML('beforeend', line(l)); };
-  (tx ? tx.lines : [null]).forEach(addLine);
+  (tx?tx.lines:[null]).forEach(l=>L.insertAdjacentHTML('beforeend',lineHtml(l)));
 
   L.onclick = e => {
-    if (e.target.tagName === 'BUTTON' && L.children.length > 1) {
-      e.target.closest('.ln').remove();
-    }
+    if (e.target.tagName==='BUTTON' && L.children.length>1) e.target.closest('.ln').remove();
   };
-  w.querySelector('#add').onclick = () => addLine();
-  w.querySelector('#cancel').onclick = () => tx ? closeModal() : done(true);
+  w.querySelector('#add-line').onclick = ()=>L.insertAdjacentHTML('beforeend',lineHtml());
+  w.querySelector('#cancel-btn').onclick = ()=>tx?closeModal():done(true);
 
-  w.querySelector('#save').onclick = guard(async () => {
-    const lines = [...L.children].map(r => ({
+  w.querySelector('#save-btn').onclick = guard(async ()=>{
+    const lines = [...L.children].map(r=>({
       grade: r.querySelector('select').value,
-      qty: r.querySelector('input').value
-    })).filter(l => l.grade || l.qty);
+      qty:   r.querySelector('input').value
+    })).filter(l=>l.grade||l.qty);
 
-    if (!lines.length || lines.some(l => !l.grade || !(+l.qty > 0))) {
-      throw new Error('Pick a grade and a quantity above 0 for every line');
-    }
+    if (!lines.length||lines.some(l=>!l.grade||!(+l.qty>0)))
+      throw new Error('Select a category and enter quantity > 0 for every line');
+
     if (sale) {
-      const need = {};
-      lines.forEach(l => need[l.grade] = (need[l.grade] || 0) + +l.qty);
-      const over = Object.keys(need).filter(g => need[g] > (avail[g] || 0) + (own[g] || 0));
-      if (over.length && !confirm('Not enough stock for: ' + over.join(', ') + '. Save anyway?')) return;
+      const need={};
+      lines.forEach(l=>need[l.grade]=(need[l.grade]||0)+(+l.qty));
+      const over=Object.keys(need).filter(g=>need[g]>(avail[g]||0)+(own[g]||0));
+      if (over.length && !confirm('Not enough stock for: '+over.join(', ')+'. Save anyway?')) return;
     }
     const body = {
       type,
-      date: w.querySelector('#f-date').value,
+      date:  w.querySelector('#f-date').value,
       party: w.querySelector('#f-party').value,
       lines,
       notes: w.querySelector('#f-notes').value
     };
-    tx ? await api('/tx/' + tx._id, 'PUT', body) : await api('/tx', 'POST', body);
-    toast(tx ? 'Changes saved' : sale ? 'Sale recorded' : 'Stock added');
+    tx ? await api('/tx/'+tx._id,'PUT',body) : await api('/tx','POST',body);
+    toast(tx?'Changes saved':sale?'Sale recorded ✓':'Stock added ✓');
     done();
   });
-
   return w;
 }
 
-/* ---------- PAGES ---------- */
+// ─── PAGES ────────────────────────────────────────────────────────────────────
 const pages = {
-  /* 1. DASHBOARD */
+
+  /* DASHBOARD — Company × Category Matrix */
   async dash(v) {
     const t = today();
-    const [st, dayS] = await Promise.all([api('/stock'), api(`/stock?from=${t}&to=${t}`)]);
-    const sum = (a, k) => num(a.reduce((x, y) => x + (y[k] || 0), 0));
-    const lows = st.filter(s => s.balance < low && s.balance > 0);
-    const outs = st.filter(s => s.balance <= 0);
+    const [matrix, dayStock] = await Promise.all([
+      api('/stock-matrix'),
+      api('/stock?from='+t+'&to='+t)
+    ]);
+    lastMatrix = matrix;
+    const { categories, companies: comps, matrix: mat, compTotals, grandTotal } = matrix;
+    const totalAdded = dayStock.reduce((a,s)=>a+(s.added||0),0);
+    const totalSold  = dayStock.reduce((a,s)=>a+(s.sold||0),0);
+    const lows = categories.filter(c=>mat[c]._total>0&&mat[c]._total<low);
+    const outs = categories.filter(c=>mat[c]._total<=0);
 
     v.innerHTML = `
       <div class="stats">
-        <div class="stat"><span>Total Stock</span><b>${sum(st, 'balance')}</b><small>BKT across ${st.length} grades</small></div>
-        <div class="stat"><span>Added Today</span><b class="pos">+${sum(dayS, 'added')}</b><small>BKT received</small></div>
-        <div class="stat"><span>Sold Today</span><b class="neg">-${sum(dayS, 'sold')}</b><small>BKT dispatched</small></div>
-        <div class="stat"><span>Low / Out</span><b>${lows.length + outs.length}</b><small>${lows.length} low, ${outs.length} empty</small></div>
+        <div class="stat"><span>Total Stock</span><b>${num(grandTotal)}</b><small>BKT in godown</small></div>
+        <div class="stat"><span>Added Today</span><b class="pos">+${num(totalAdded)}</b><small>BKT received</small></div>
+        <div class="stat"><span>Sold Today</span><b class="neg">-${num(totalSold)}</b><small>BKT dispatched</small></div>
+        <div class="stat"><span>Low / Out</span><b>${lows.length+outs.length}</b><small>${lows.length} low, ${outs.length} empty</small></div>
       </div>
 
-      <div class="two">
-        <div class="card">
-          <h2>
-            <span>Current Stock (${st.length} grades)</span>
-          </h2>
-          <div class="filter-bar">
-            <div class="search-input-wrap">
-              <span class="search-icon-inside">🔍</span>
-              <input type="text" id="g-search" placeholder="Filter grades (e.g. W320, JH)...">
-            </div>
-            <div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:2px">
-              <button class="pill on" data-gf="all">All (${st.length})</button>
-              <button class="pill" data-gf="pos">In Stock</button>
-              <button class="pill" data-gf="low">Low (${lows.length})</button>
-              <button class="pill" data-gf="out">Out (${outs.length})</button>
-            </div>
+      <div class="card">
+        <h2>
+          <span>📊 Current Stock — Company &amp; Category Wise</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn sm noprint" id="btn-pdf">📄 Download PDF</button>
+            <button class="btn s sm noprint" onclick="print()">🖨️ Print</button>
           </div>
-          <div class="grade-grid" id="g-list"></div>
-        </div>
-
-        <div class="card">
-          <h2>Stock Alerts</h2>
-          <div style="max-height:480px;overflow-y:auto">
-            ${outs.map(s => `<div class="alert">🚨 <div><b>${esc(s.grade)}</b> is completely out of stock</div></div>`).join('')}
-            ${lows.map(s => `<div class="alert w">⚠️ <div><b>${esc(s.grade)}</b> has only ${num(s.balance)} BKT remaining (below ${low})</div></div>`).join('')}
-            ${!outs.length && !lows.length ? '<p style="color:var(--mu);padding:14px 0">✅ All grades are well stocked!</p>' : ''}
-          </div>
-        </div>
+        </h2>
+        <div id="matrix-out"></div>
       </div>
+
+      ${(outs.length||lows.length)?`
+        <div class="card noprint">
+          <h2>⚠️ Stock Alerts</h2>
+          ${outs.map(c=>`<div class="alert">🚨 <div><b>${esc(c)}</b> is completely out of stock</div></div>`).join('')}
+          ${lows.map(c=>`<div class="alert w">⚠️ <div><b>${esc(c)}</b> only ${num(mat[c]._total)} BKT left (below ${low} BKT limit)</div></div>`).join('')}
+        </div>
+      `:''}
     `;
 
-    let activeFilter = 'all';
-    const renderGrades = () => {
-      const q = ($('#g-search')?.value || '').toLowerCase().trim();
-      const filtered = st.filter(s => {
-        if (q && !s.grade.toLowerCase().includes(q)) return false;
-        if (activeFilter === 'pos') return s.balance > 0;
-        if (activeFilter === 'low') return s.balance < low && s.balance > 0;
-        if (activeFilter === 'out') return s.balance <= 0;
-        return true;
-      });
-      $('#g-list').innerHTML = filtered.length ? filtered.map(s => `
-        <div class="g ${s.balance <= 0 ? 'out' : s.balance < low ? 'low' : ''}" data-g="${esc(s.grade)}" title="Click to view history">
-          <i>${esc(s.grade)}</i>
-          <b>${num(s.balance)}</b>
-          <small>BKT</small>
-        </div>
-      `).join('') : '<p style="color:var(--mu);padding:20px;grid-column:1/-1;text-align:center">No grades match your search.</p>';
-    };
-
-    $('#g-search').oninput = renderGrades;
-    v.querySelectorAll('[data-gf]').forEach(btn => {
-      btn.onclick = () => {
-        v.querySelectorAll('[data-gf]').forEach(b => b.classList.remove('on'));
-        btn.classList.add('on');
-        activeFilter = btn.dataset.gf;
-        renderGrades();
-      };
-    });
-    renderGrades();
+    renderMatrix(v.querySelector('#matrix-out'), matrix);
+    v.querySelector('#btn-pdf').onclick = ()=>stockMatrixPdf(lastMatrix);
   },
 
-  async buy(v) { v.append(await entryForm('purchase', null, () => go('dash'))); },
-  async sell(v) { v.append(await entryForm('sale', null, () => go('dash'))); },
+  async buy(v) { v.append(await entryForm('purchase',null,()=>go('dash'))); },
+  async sell(v){ v.append(await entryForm('sale',null,()=>go('dash'))); },
 
-  /* 2. SEARCH PAGE */
-  search: v => searchPage(v),
+  async plog(v){ return renderLogPage(v,'purchase'); },
+  async slog(v){ return renderLogPage(v,'sale'); },
 
-  /* 3. LOGS (Purchase & Sales) */
-  async plog(v) { return renderLogPage(v, 'purchase'); },
-  async slog(v) { return renderLogPage(v, 'sale'); },
-
-  /* 4. REPORTS */
+  /* REPORTS — Stock Matrix PDF */
   async rep(v) {
     v.innerHTML = `
       <div class="card">
-        <h2>Stock Movement Report</h2>
+        <h2>
+          <span>📋 Stock Matrix Report</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn sm noprint" id="r-pdf">📄 Download PDF</button>
+            <button class="btn s sm noprint" onclick="print()">🖨️ Print</button>
+          </div>
+        </h2>
+        <p style="color:var(--mu);font-size:13px;margin:0 0 16px">
+          Shows current godown stock broken down by company (supplier) and cashew category.
+        </p>
+        <div id="rep-matrix"></div>
+      </div>
+
+      <div class="card">
+        <h2>Stock Movement (Date Range)</h2>
         <div class="row">
           <div><label>From Date</label><input type="date" id="rf"></div>
           <div><label>To Date</label><input type="date" id="rt"></div>
-          <button class="btn s sm" data-q="d">Today</button>
-          <button class="btn s sm" data-q="w">This Week</button>
-          <button class="btn s sm" data-q="m">This Month</button>
-          <button class="btn s sm" data-q="a">All Time</button>
+          <button class="btn s sm" data-q="d" style="align-self:flex-end">Today</button>
+          <button class="btn s sm" data-q="w" style="align-self:flex-end">This Week</button>
+          <button class="btn s sm" data-q="m" style="align-self:flex-end">This Month</button>
+          <button class="btn s sm" data-q="a" style="align-self:flex-end">All Time</button>
         </div>
-        <div class="row noprint" style="margin-top:10px">
-          <button class="btn s sm" id="c">⬇ Download CSV</button>
-          <button class="btn sm" id="p">📄 Download PDF</button>
-          <button class="btn s sm" onclick="print()">🖨️ Print</button>
+        <div class="row noprint" style="margin-top:4px">
+          <button class="btn s sm" id="mv-csv">⬇ CSV</button>
+          <button class="btn sm" id="mv-pdf">📄 PDF</button>
         </div>
-        <div class="tw" style="margin-top:14px" id="rt-out"></div>
+        <div class="tw" style="margin-top:14px" id="mv-out"></div>
       </div>
     `;
 
-    let data = [];
-    const load = guard(async () => {
-      const f = $('#rf').value, t = $('#rt').value;
-      data = await api(`/stock?from=${f}&to=${t}`);
-      $('#rt-out').innerHTML = `
+    // Load current stock matrix
+    let matData = await api('/stock-matrix');
+    renderMatrix(v.querySelector('#rep-matrix'), matData);
+    v.querySelector('#r-pdf').onclick = ()=>stockMatrixPdf(matData);
+
+    // Movement report
+    let mvData = [];
+    const loadMv = guard(async ()=>{
+      const f=$('#rf').value, t=$('#rt').value;
+      mvData = await api(`/stock?from=${f}&to=${t}`);
+      $('#mv-out').innerHTML = mvData.length ? `
         <table>
-          <thead><tr><th>Grade</th><th>Added</th><th>Sold</th><th>Balance Now</th></tr></thead>
+          <thead><tr><th>Category</th><th>Added (BKT)</th><th>Sold (BKT)</th><th>Balance Now</th></tr></thead>
           <tbody>
-            ${data.map(s => `
-              <tr>
-                <td><span class="chip">${esc(s.grade)}</span></td>
-                <td class="pos">+${num(s.added)} BKT</td>
-                <td class="neg">-${num(s.sold)} BKT</td>
-                <td><b>${num(s.balance)}</b> BKT</td>
-              </tr>
-            `).join('')}
+            ${mvData.map(s=>`<tr>
+              <td><b>${esc(s.grade)}</b></td>
+              <td class="pos">+${num(s.added)}</td>
+              <td class="neg">-${num(s.sold)}</td>
+              <td><b>${num(s.balance)}</b></td>
+            </tr>`).join('')}
+            <tr style="border-top:2px solid var(--line)">
+              <td><b>Total</b></td>
+              <td class="pos"><b>+${num(mvData.reduce((a,s)=>a+s.added,0))}</b></td>
+              <td class="neg"><b>-${num(mvData.reduce((a,s)=>a+s.sold,0))}</b></td>
+              <td><b>${num(mvData.reduce((a,s)=>a+s.balance,0))}</b></td>
+            </tr>
           </tbody>
         </table>
-      `;
+      ` : '<p style="color:var(--mu);padding:14px 0">No data for selected period.</p>';
     });
 
-    v.onchange = e => { if (e.target.type === 'date') load(); };
-    v.onclick = e => {
-      const q = e.target.dataset.q;
-      if (!q) return;
-      const n = new Date(), d = new Date();
-      if (q === 'w') { const k = (n.getDay() + 6) % 7; d.setDate(n.getDate() - k); }
-      else if (q === 'm') d.setDate(1);
-      $('#rf').value = q === 'a' ? '' : iso(d);
-      $('#rt').value = q === 'a' ? '' : today();
-      load();
+    v.onchange = e=>{ if(e.target.type==='date') loadMv(); };
+    v.onclick = e=>{
+      const q=e.target.dataset.q;
+      if(!q) return;
+      const n=new Date(),d=new Date();
+      if(q==='w'){const k=(n.getDay()+6)%7;d.setDate(n.getDate()-k);}
+      else if(q==='m') d.setDate(1);
+      $('#rf').value = q==='a'?'':iso(d);
+      $('#rt').value = q==='a'?'':today();
+      loadMv();
     };
-
-    const rows = () => data.map(s => [s.grade, num(s.added), num(s.sold), num(s.balance)]);
-    $('#c').onclick = () => csv(['Grade', 'Added', 'Sold', 'Balance'], rows(), 'stock-report');
-    $('#p').onclick = () => pdf(
-      'Stock Movement Report',
-      ['Grade', 'Added', 'Sold', 'Balance now'],
-      [...rows(), ['Total', num(data.reduce((a,b)=>a+b.added,0)), num(data.reduce((a,b)=>a+b.sold,0)), num(data.reduce((a,b)=>a+b.balance,0))]],
-      'stock-report',
-      'Period: ' + ($('#rf').value ? fmt($('#rf').value) : 'start') + ' to ' + ($('#rt').value ? fmt($('#rt').value) : 'today')
-    );
-
-    $('#rf').value = today().slice(0, 8) + '01';
-    $('#rt').value = today();
-    load();
+    v.querySelector('#mv-csv').onclick = ()=>{
+      const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+      const rows=[['Category','Added','Sold','Balance'],...mvData.map(s=>[s.grade,num(s.added),num(s.sold),num(s.balance)])];
+      const b=new Blob([rows.map(r=>r.map(q).join(',')).join('\n')],{type:'text/csv'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='movement-'+today()+'.csv';a.click();
+    };
+    v.querySelector('#mv-pdf').onclick = ()=>{
+      const doc=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+      doc.setFontSize(14);doc.setTextColor(14,100,76);
+      doc.text('Stock Movement Report',14,14);
+      doc.setFontSize(8);doc.setTextColor(100);
+      const p=$('#rf').value,q=$('#rt').value;
+      doc.text('Period: '+(p?fmt(p):'start')+' to '+(q?fmt(q):'today')+'  |  Generated: '+fmt(today()),14,20);
+      const rows=mvData.map(s=>[s.grade,num(s.added),num(s.sold),num(s.balance)]);
+      rows.push(['Total',num(mvData.reduce((a,s)=>a+s.added,0)),num(mvData.reduce((a,s)=>a+s.sold,0)),num(mvData.reduce((a,s)=>a+s.balance,0))]);
+      doc.autoTable({
+        head:[['Category','Added (BKT)','Sold (BKT)','Balance']],
+        body:rows,startY:24,
+        headStyles:{fillColor:[14,124,95],textColor:[255,255,255],fontStyle:'bold',fontSize:9},
+        bodyStyles:{fontSize:9},
+        didParseCell:d=>{if(d.row.index===rows.length-1){d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[14,124,95];d.cell.styles.textColor=[255,255,255];}}
+      });
+      doc.save('movement-'+today()+'.pdf');
+    };
+    $('#rf').value = today().slice(0,8)+'01'; $('#rt').value = today();
+    loadMv();
   },
 
-  /* 5. SETTINGS */
+  /* SETTINGS — Companies + Categories */
   async set(v) {
-    const draw = () => {
+    const draw = async ()=>{
+      const [cats, comps] = await Promise.all([api('/grades'), api('/companies')]);
+      grades = cats; companies = comps;
+
       v.innerHTML = `
         <div class="two">
+          <!-- LEFT: Categories -->
           <div class="card">
-            <h2>Cashew Grades (${grades.length})</h2>
+            <h2>Cashew Categories (${cats.length})</h2>
             <div class="row">
-              <div style="flex:2"><input id="ng" placeholder="New grade code, e.g. W500"></div>
-              <button class="btn" id="ag" style="flex:0;white-space:nowrap">+ Add Grade</button>
+              <div style="flex:2"><input id="nc" placeholder="New category name, e.g. W500"></div>
+              <button class="btn" id="add-cat" style="flex:0;white-space:nowrap">+ Add</button>
             </div>
-            <div style="max-height:360px;overflow-y:auto">
-              <table>
-                <tbody>
-                  ${grades.map(g => `
-                    <tr id="gr-${esc(g)}">
-                      <td><b>${esc(g)}</b></td>
-                      <td style="text-align:right;white-space:nowrap">
-                        <button class="btn s sm" data-rename="${esc(g)}" title="Edit grade name" style="margin-right:4px">✏️</button>
-                        <button class="btn d sm" data-g="${esc(g)}">Remove</button>
-                      </td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
+            <div style="max-height:420px;overflow-y:auto">
+              <table><tbody>
+                ${cats.map(g=>`
+                  <tr id="cat-${esc(g)}">
+                    <td><b>${esc(g)}</b></td>
+                    <td style="text-align:right;white-space:nowrap">
+                      <button class="btn s sm" data-rename-cat="${esc(g)}" style="margin-right:4px">✏️</button>
+                      <button class="btn d sm" data-del-cat="${esc(g)}">Remove</button>
+                    </td>
+                  </tr>`).join('')}
+              </tbody></table>
             </div>
           </div>
 
+          <!-- RIGHT: Companies + Other -->
           <div>
             <div class="card">
+              <h2>Companies / Suppliers (${comps.length})</h2>
+              <div class="row">
+                <div style="flex:2"><input id="nco" placeholder="Company name, e.g. ACME"></div>
+                <button class="btn" id="add-comp" style="flex:0;white-space:nowrap">+ Add</button>
+              </div>
+              <div style="max-height:220px;overflow-y:auto">
+                <table><tbody>
+                  ${comps.map(c=>`
+                    <tr id="comp-${esc(c)}">
+                      <td><b>${esc(c)}</b></td>
+                      <td style="text-align:right;white-space:nowrap">
+                        <button class="btn s sm" data-rename-comp="${esc(c)}" style="margin-right:4px">✏️</button>
+                        <button class="btn d sm" data-del-comp="${esc(c)}">Remove</button>
+                      </td>
+                    </tr>`).join('')}
+                </tbody></table>
+              </div>
+            </div>
+
+            <div class="card">
               <h2>Low Stock Alert Limit</h2>
-              <p style="color:var(--mu);font-size:13px;margin:0 0 10px">Show warning when any grade quantity drops below this amount (BKT):</p>
+              <p style="color:var(--mu);font-size:13px;margin:0 0 10px">Warn when any category drops below (BKT):</p>
               <div class="row">
                 <div><input id="lw" type="number" min="0" value="${low}"></div>
                 <button class="btn" id="sl" style="flex:0">Save Limit</button>
@@ -930,12 +798,12 @@ const pages = {
             </div>
 
             <div class="card">
-              <h2>Data Backup & Migration</h2>
-              <p style="color:var(--mu);font-size:13px;margin:0 0 12px">Download full JSON backup of MongoDB database or restore previous backups.</p>
-              <div class="row noprint" style="gap:10px">
-                <button class="btn s sm" id="bk-exp" style="flex:1">⬇ Export Backup JSON</button>
+              <h2>Data Backup &amp; Migration</h2>
+              <p style="color:var(--mu);font-size:13px;margin:0 0 12px">Export or import full backup (JSON format).</p>
+              <div class="row" style="gap:10px">
+                <button class="btn s sm" id="bk-exp" style="flex:1">⬇ Export Backup</button>
                 <label class="btn s sm" style="cursor:pointer;flex:1">
-                  ⬆ Import Backup JSON
+                  ⬆ Import Backup
                   <input type="file" id="bk-imp" accept=".json" style="display:none">
                 </label>
               </div>
@@ -944,184 +812,162 @@ const pages = {
         </div>
       `;
 
-      $('#ag').onclick = guard(async () => {
-        const val = $('#ng').value.trim();
-        if (!val) return;
-        await api('/grades', 'POST', { name: val });
-        grades = await api('/grades');
-        draw();
-        toast('Grade added');
+      $('#add-cat').onclick = guard(async ()=>{
+        const val=$('#nc').value.trim(); if(!val) return;
+        await api('/grades','POST',{name:val}); toast('Category added'); draw();
       });
-
-      $('#sl').onclick = guard(async () => {
-        await api('/settings', 'PUT', { low: $('#lw').value });
-        low = +$('#lw').value;
-        toast('Limit saved');
+      $('#add-comp').onclick = guard(async ()=>{
+        const val=$('#nco').value.trim(); if(!val) return;
+        await api('/companies','POST',{name:val}); toast('Company added'); draw();
       });
-
-      $('#bk-exp').onclick = guard(async () => {
-        const d = await api('/export');
-        const b = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(b);
-        a.download = 'cashewtrack_backup_' + today() + '.json';
-        a.click();
-        toast('Backup exported');
+      $('#sl').onclick = guard(async ()=>{
+        await api('/settings','PUT',{low:$('#lw').value}); low=+$('#lw').value; toast('Limit saved');
       });
-
-      $('#bk-imp').onchange = guard(async e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async ev => {
-          try {
-            const data = JSON.parse(ev.target.result);
-            await api('/import', 'POST', data);
-            [grades, { low }] = await Promise.all([api('/grades'), api('/settings')]);
-            draw();
-            toast('Backup imported successfully!');
-          } catch (err) { toast(err.message || 'Import failed', 1); }
+      $('#bk-exp').onclick = guard(async ()=>{
+        const d=await api('/export');
+        const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+        const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+        a.download='godownstock_backup_'+today()+'.json'; a.click(); toast('Backup exported');
+      });
+      $('#bk-imp').onchange = guard(async e=>{
+        const file=e.target.files[0]; if(!file) return;
+        const reader=new FileReader();
+        reader.onload=async ev=>{
+          try{
+            const data=JSON.parse(ev.target.result);
+            await api('/import','POST',data);
+            [grades,companies]=await Promise.all([api('/grades'),api('/companies')]);
+            draw(); toast('Backup imported successfully!');
+          }catch(err){toast(err.message||'Import failed',1);}
         };
-        reader.readAsText(file);
-        e.target.value = '';
+        reader.readAsText(file); e.target.value='';
       });
 
-      v.onclick = guard(async e => {
-        // Delete grade
-        const g = e.target.dataset.g;
-        if (g) {
-          if (!confirm('Remove grade ' + g + '?')) return;
-          await api('/grades/' + encodeURIComponent(g), 'DELETE');
-          grades = await api('/grades');
-          draw();
-          toast('Grade removed');
-          return;
+      v.onclick = guard(async e=>{
+        // Delete category
+        const dc=e.target.dataset.delCat;
+        if(dc){ if(!confirm('Remove category "'+dc+'"?')) return; await api('/grades/'+encodeURIComponent(dc),'DELETE'); grades=await api('/grades'); draw(); toast('Category removed'); return; }
+        // Rename category
+        const rc=e.target.dataset.renameCat;
+        if(rc){
+          const row=document.getElementById('cat-'+rc); if(!row) return;
+          row.innerHTML=`<td colspan="2"><div class="row" style="margin:0;gap:6px;align-items:center">
+            <input id="ri" value="${esc(rc)}" style="flex:2;padding:8px 10px" autofocus>
+            <button class="btn sm" id="rs">Save</button><button class="btn s sm" id="rx">Cancel</button>
+          </div></td>`;
+          document.getElementById('ri').select();
+          document.getElementById('rx').onclick=draw;
+          document.getElementById('rs').onclick=guard(async()=>{
+            const n=document.getElementById('ri').value.trim(); if(!n) throw new Error('Name cannot be empty');
+            await api('/grades/'+encodeURIComponent(rc),'PATCH',{name:n}); grades=await api('/grades'); draw(); toast('Category renamed');
+          }); return;
         }
-        // Inline rename
-        const rg = e.target.dataset.rename;
-        if (!rg) return;
-        const row = document.getElementById('gr-' + rg);
-        if (!row) return;
-        row.innerHTML = `
-          <td colspan="2">
-            <div class="row" style="margin:0;gap:6px;align-items:center">
-              <input id="rn-inp" value="${esc(rg)}" style="flex:2;font-size:15px;padding:8px 10px" autofocus>
-              <button class="btn sm" id="rn-save" style="flex:0;white-space:nowrap">Save</button>
-              <button class="btn s sm" id="rn-cancel" style="flex:0">Cancel</button>
-            </div>
-          </td>
-        `;
-        document.getElementById('rn-inp').select();
-        document.getElementById('rn-cancel').onclick = draw;
-        document.getElementById('rn-save').onclick = guard(async () => {
-          const newName = document.getElementById('rn-inp').value.trim();
-          if (!newName) throw new Error('Grade name cannot be empty');
-          await api('/grades/' + encodeURIComponent(rg), 'PATCH', { name: newName });
-          grades = await api('/grades');
-          draw();
-          toast('Grade renamed to ' + newName.toUpperCase());
-        });
+        // Delete company
+        const dco=e.target.dataset.delComp;
+        if(dco){ if(!confirm('Remove company "'+dco+'"?')) return; await api('/companies/'+encodeURIComponent(dco),'DELETE'); companies=await api('/companies'); draw(); toast('Company removed'); return; }
+        // Rename company
+        const rco=e.target.dataset.renameComp;
+        if(rco){
+          const row=document.getElementById('comp-'+rco); if(!row) return;
+          row.innerHTML=`<td colspan="2"><div class="row" style="margin:0;gap:6px;align-items:center">
+            <input id="ci" value="${esc(rco)}" style="flex:2;padding:8px 10px" autofocus>
+            <button class="btn sm" id="cs">Save</button><button class="btn s sm" id="cx">Cancel</button>
+          </div></td>`;
+          document.getElementById('ci').select();
+          document.getElementById('cx').onclick=draw;
+          document.getElementById('cs').onclick=guard(async()=>{
+            const n=document.getElementById('ci').value.trim(); if(!n) throw new Error('Name cannot be empty');
+            await api('/companies/'+encodeURIComponent(rco),'PATCH',{name:n}); companies=await api('/companies'); draw(); toast('Company renamed');
+          }); return;
+        }
       });
     };
     draw();
   }
 };
 
-/* ---------- LOG PAGE WITH MOBILE CARD VIEW & VIRTUAL PAGINATION ---------- */
+// ─── LOG PAGE ────────────────────────────────────────────────────────────────
 async function renderLogPage(v, type) {
-  const sale = type === 'sale', who = sale ? 'Buyer' : 'Seller';
-  let rows = [];
-  let displayLimit = 35;
+  const sale = type==='sale', who = sale?'Buyer':'Company / Supplier';
+  let rows=[], displayLimit=35;
 
   v.innerHTML = `
     <div class="card">
       <h2>
-        <span>${sale ? 'Sales' : 'Purchase'} Log</span>
-        <button class="btn s sm" id="btn-toggle-view" style="font-size:12px">📱 Mobile Cards</button>
+        <span>${sale?'Sales':'Purchase'} Log</span>
+        <button class="btn s sm noprint" id="btn-toggle-view" style="font-size:12px">📱 Card View</button>
       </h2>
       <div class="row" id="flt">
         <div><label>From</label><input type="date" id="lf"></div>
         <div><label>To</label><input type="date" id="lt"></div>
         <div>
-          <label>Grade</label>
+          <label>Category</label>
           <select id="lg">
-            <option value="">All grades</option>
-            ${grades.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('')}
+            <option value="">All categories</option>
+            ${grades.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('')}
           </select>
         </div>
         <div>
-          <label>Search ${who}</label>
+          <label>${sale?'Search Buyer':'Search Company'}</label>
           <input id="lq" placeholder="Filter by name...">
         </div>
-        <button class="btn s sm" id="lc" style="align-self:flex-end">Clear Filters</button>
+        <button class="btn s sm" id="lc" style="align-self:flex-end">Clear</button>
       </div>
-
       <div class="row noprint" style="margin-top:10px">
-        <button class="btn s sm" id="c">⬇ Download CSV</button>
-        <button class="btn sm" id="p">📄 Download PDF</button>
-        <button class="btn s sm" onclick="print()">🖨️ Print</button>
+        <button class="btn s sm" id="log-csv">⬇ CSV</button>
+        <button class="btn sm" id="log-pdf">📄 PDF</button>
+        <button class="btn s sm noprint" onclick="print()">🖨️ Print</button>
       </div>
-
-      <!-- DESKTOP TABLE VIEW -->
       <div class="tw tw-desktop" id="tb-desktop" style="margin-top:12px"></div>
-
-      <!-- MOBILE CARDS VIEW -->
       <div class="m-cards" id="tb-mobile" style="margin-top:12px"></div>
-
-      <div id="load-more-container"></div>
+      <div id="load-more-wrap"></div>
       <p class="tot" id="log-tot"></p>
     </div>
   `;
 
-  let forceCards = window.innerWidth <= 768;
-  const updateViewToggle = () => {
-    $('#btn-toggle-view').textContent = forceCards ? '📊 Table View' : '📱 Card View';
-    $('#tb-desktop').style.display = forceCards ? 'none' : 'block';
-    $('#tb-mobile').style.display = forceCards ? 'block' : 'none';
+  let forceCards = window.innerWidth<=768;
+  const updToggle = ()=>{
+    $('#btn-toggle-view').textContent = forceCards?'📊 Table View':'📱 Card View';
+    $('#tb-desktop').style.display = forceCards?'none':'block';
+    $('#tb-mobile').style.display  = forceCards?'block':'none';
   };
-  $('#btn-toggle-view').onclick = () => {
-    forceCards = !forceCards;
-    updateViewToggle();
-  };
+  $('#btn-toggle-view').onclick = ()=>{ forceCards=!forceCards; updToggle(); };
 
-  const flat = () => rows.flatMap(t => t.lines.map(l => [fmt(t.date), t.party, l.grade, num(l.qty), t.notes || '']));
+  const flat = ()=>rows.flatMap(t=>t.lines.map(l=>[fmt(t.date), t.party, l.grade, num(l.qty), t.notes||'']));
 
-  const renderCurrentRows = () => {
-    const visible = rows.slice(0, displayLimit);
-
-    // Table view
-    $('#tb-desktop').innerHTML = visible.length ? `
+  const renderRows = ()=>{
+    const vis = rows.slice(0,displayLimit);
+    // Desktop table
+    $('#tb-desktop').innerHTML = vis.length ? `
       <table>
-        <thead><tr><th>Date</th><th>${who}</th><th>Items (BKT)</th><th>Notes</th><th class="noprint">Actions</th></tr></thead>
+        <thead><tr>
+          <th>Date</th><th>${who}</th><th>Items (BKT)</th><th>Notes</th><th class="noprint">Actions</th>
+        </tr></thead>
         <tbody>
-          ${visible.map(t => `
-            <tr>
-              <td><b>${fmt(t.date)}</b></td>
-              <td>${esc(t.party)}</td>
-              <td>${t.lines.map(l => `<span class="chip">${esc(l.grade)}<em>${num(l.qty)}</em></span>`).join('')}</td>
-              <td style="color:var(--mu);font-size:13px">${esc(t.notes || '—')}</td>
-              <td class="noprint" style="white-space:nowrap">
-                <button class="btn s sm" data-e="${t._id}">✏️</button>
-                <button class="btn d sm" data-x="${t._id}">✕</button>
-              </td>
-            </tr>
-          `).join('')}
+          ${vis.map(t=>`<tr>
+            <td><b>${fmt(t.date)}</b></td>
+            <td>${sale?esc(t.party):`<span class="comp-tag">${esc(t.party)}</span>`}</td>
+            <td>${t.lines.map(l=>`<span class="chip">${esc(l.grade)}<em>${num(l.qty)}</em></span>`).join('')}</td>
+            <td style="color:var(--mu);font-size:13px">${esc(t.notes||'—')}</td>
+            <td class="noprint" style="white-space:nowrap">
+              <button class="btn s sm" data-e="${t._id}">✏️</button>
+              <button class="btn d sm" data-x="${t._id}">✕</button>
+            </td>
+          </tr>`).join('')}
         </tbody>
       </table>
     ` : '<p style="color:var(--mu);padding:14px 0">No entries match your filters.</p>';
 
-    // Mobile Cards view
-    $('#tb-mobile').innerHTML = visible.length ? visible.map(t => `
+    // Mobile cards
+    $('#tb-mobile').innerHTML = vis.length ? vis.map(t=>`
       <div class="tx-card">
         <div class="tx-card-head">
-          <div class="tx-card-party">${esc(t.party)}</div>
-          <span class="badge ${sale ? 's' : 'p'}">${sale ? 'Sale' : 'Purchase'}</span>
+          <div class="tx-card-party">${sale?esc(t.party):`<span class="comp-tag">${esc(t.party)}</span>`}</div>
+          <span class="badge ${sale?'s':'p'}">${sale?'Sale':'Purchase'}</span>
         </div>
         <div class="tx-card-date">📅 ${fmt(t.date)}</div>
-        <div class="tx-card-items">
-          ${t.lines.map(l => `<span class="chip">${esc(l.grade)}<em>${num(l.qty)} BKT</em></span>`).join('')}
-        </div>
-        ${t.notes ? `<div class="tx-card-notes">📝 ${esc(t.notes)}</div>` : ''}
+        <div class="tx-card-items">${t.lines.map(l=>`<span class="chip">${esc(l.grade)}<em>${num(l.qty)} BKT</em></span>`).join('')}</div>
+        ${t.notes?`<div class="tx-card-notes">📝 ${esc(t.notes)}</div>`:''}
         <div class="tx-card-actions noprint">
           <button class="btn s sm" data-e="${t._id}">✏️ Edit</button>
           <button class="btn d sm" data-x="${t._id}">🗑️ Delete</button>
@@ -1129,304 +975,93 @@ async function renderLogPage(v, type) {
       </div>
     `).join('') : '<p style="color:var(--mu);padding:14px 0">No entries match your filters.</p>';
 
-    // Load more button for mobile performance
-    if (rows.length > displayLimit) {
-      $('#load-more-container').innerHTML = `
-        <button class="load-more-btn" id="btn-more">
-          Showing ${displayLimit} of ${rows.length} entries — Tap to load more ↓
-        </button>
-      `;
-      $('#btn-more').onclick = () => {
-        displayLimit += 35;
-        renderCurrentRows();
-      };
-    } else {
-      $('#load-more-container').innerHTML = '';
-    }
+    // Load more
+    if (rows.length>displayLimit) {
+      $('#load-more-wrap').innerHTML=`<button class="load-more-btn" id="btn-more">Showing ${displayLimit} of ${rows.length} — Load more ↓</button>`;
+      $('#btn-more').onclick=()=>{ displayLimit+=35; renderRows(); };
+    } else { $('#load-more-wrap').innerHTML=''; }
 
-    const totalQty = num(rows.reduce((a, t) => a + t.lines.reduce((x, l) => x + (Number(l.qty) || 0), 0), 0));
-    $('#log-tot').textContent = `Total: ${totalQty} BKT across ${rows.length} entries`;
-    updateViewToggle();
+    const totQty=num(rows.reduce((a,t)=>a+t.lines.reduce((x,l)=>x+(Number(l.qty)||0),0),0));
+    $('#log-tot').textContent = `Total: ${totQty} BKT  |  ${rows.length} entries`;
+    updToggle();
   };
 
-  const load = guard(async () => {
-    const p = new URLSearchParams({
-      type,
-      from: $('#lf').value,
-      to: $('#lt').value,
-      grade: $('#lg').value,
-      q: $('#lq').value
-    });
-    displayLimit = 35;
-    rows = await api('/tx?' + p);
-    renderCurrentRows();
+  const load = guard(async()=>{
+    const p=new URLSearchParams({type,from:$('#lf').value,to:$('#lt').value,grade:$('#lg').value,q:$('#lq').value});
+    displayLimit=35; rows=await api('/tx?'+p); renderRows();
   });
 
   $('#flt').oninput = load;
-  $('#lc').onclick = () => {
-    $('#lf').value = $('#lt').value = $('#lg').value = $('#lq').value = '';
-    load();
-  };
+  $('#lc').onclick  = ()=>{ $('#lf').value=$('#lt').value=$('#lg').value=$('#lq').value=''; load(); };
 
-  const handleAction = guard(async e => {
-    const id = e.target.dataset.e || e.target.dataset.x;
-    if (!id) return;
-    if (e.target.dataset.x) {
-      if (confirm('Delete this entry permanently from database?')) {
-        await api('/tx/' + id, 'DELETE');
-        toast('Entry deleted');
-        load();
-      }
+  const handleAction = guard(async e=>{
+    const id=e.target.dataset.e||e.target.dataset.x; if(!id) return;
+    if(e.target.dataset.x){
+      if(confirm('Delete this entry permanently?')){ await api('/tx/'+id,'DELETE'); toast('Entry deleted'); load(); }
       return;
     }
     openModal('');
-    const m = await entryForm(type, rows.find(t => t._id === id), () => { closeModal(); load(); });
-    $('#mbody').innerHTML = '';
-    $('#mbody').append(m);
+    const m=await entryForm(type,rows.find(t=>t._id===id),()=>{ closeModal(); load(); });
+    $('#mbody').innerHTML=''; $('#mbody').append(m);
   });
-
   $('#tb-desktop').onclick = handleAction;
-  $('#tb-mobile').onclick = handleAction;
+  $('#tb-mobile').onclick  = handleAction;
 
-  const H = ['Date', who, 'Grade', 'Qty (BKT)', 'Notes'];
-  $('#c').onclick = () => csv(H, flat(), type + '-log');
-  $('#p').onclick = () => {
-    const f = flat();
-    pdf(
-      (sale ? 'Sales' : 'Purchase') + ' Log',
-      H,
-      [...f, ['Total', '', '', num(f.reduce((a, r) => a + r[3], 0)), '']],
-      type + '-log',
-      ($('#lf').value || $('#lt').value) ? 'Period: ' + (fmt($('#lf').value) || 'start') + ' to ' + (fmt($('#lt').value) || 'today') : 'All dates'
-    );
+  const H=[fmt?'Date':'',...['Date',who,'Category','Qty (BKT)','Notes']];
+  const header=['Date',who,'Category','Qty (BKT)','Notes'];
+  $('#log-csv').onclick=()=>{
+    const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+    const r=flat();
+    const b=new Blob([[header,...r].map(x=>x.map(q).join(',')).join('\n')],{type:'text/csv'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=type+'-log-'+today()+'.csv';a.click();
   };
-
-  load();
-}
-
-/* ---------- SEARCH PAGE (OPTIMIZED) ---------- */
-let presel = [];
-document.addEventListener('click', e => {
-  const g = e.target.closest('.g[data-g]');
-  if (g) {
-    presel = [g.dataset.g];
-    go('search');
-  }
-});
-
-async function searchPage(v) {
-  const sel = new Set(presel);
-  presel = [];
-  let rows = [];
-
-  v.innerHTML = `
-    <div class="card">
-      <h2>Search Records by Grade</h2>
-      <label>Tap grade pills to filter (None selected = all grades):</label>
-      <div id="gc" style="max-height:120px;overflow-y:auto;padding-bottom:4px">
-        ${grades.map(g => `<button type="button" class="pill ${sel.has(g) ? 'on' : ''}" data-g="${esc(g)}">${esc(g)}</button>`).join('')}
-      </div>
-
-      <div class="row" id="sf" style="margin-top:14px">
-        <div>
-          <label>Type</label>
-          <select id="st">
-            <option value="">All (Purchases & Sales)</option>
-            <option value="purchase">Purchases Only</option>
-            <option value="sale">Sales Only</option>
-          </select>
-        </div>
-        <div><label>From Date</label><input type="date" id="d1"></div>
-        <div><label>To Date</label><input type="date" id="d2"></div>
-        <div><label>Min Qty (BKT)</label><input type="number" inputmode="decimal" id="q1" min="0" step="any" placeholder="0"></div>
-        <div><label>Max Qty (BKT)</label><input type="number" inputmode="decimal" id="q2" min="0" step="any" placeholder="Max"></div>
-      </div>
-
-      <div class="row" id="sg">
-        <div style="flex:2">
-          <label>Party Name</label>
-          <input id="sq" placeholder="Filter buyer or seller...">
-        </div>
-        <div style="flex:1">
-          <label>Sort By</label>
-          <select id="so">
-            <option value="date_desc">Newest First</option>
-            <option value="date_asc">Oldest First</option>
-            <option value="qty_desc">Largest Qty</option>
-            <option value="qty_asc">Smallest Qty</option>
-          </select>
-        </div>
-      </div>
-      <div class="row noprint" style="margin-top:6px">
-        <button class="btn s sm" data-r="7">Last 7 Days</button>
-        <button class="btn s sm" data-r="m">This Month</button>
-        <button class="btn s sm" data-r="y">This Year</button>
-        <button class="btn s sm" data-r="x">Reset Filters</button>
-      </div>
-    </div>
-    <div id="sres"></div>
-  `;
-
-  const load = guard(async () => {
-    const a = $('#d1').value, b = $('#d2').value;
-    if (a && b && a > b) throw new Error('"From date" cannot be after "To date"');
-    const p = new URLSearchParams({
-      grades: [...sel].join(','),
-      type: $('#st').value,
-      from: a,
-      to: b,
-      min: $('#q1').value,
-      max: $('#q2').value,
-      q: $('#sq').value,
-      sort: $('#so').value
+  $('#log-pdf').onclick=()=>{
+    const f=flat();
+    const doc=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    doc.setFontSize(14);doc.setTextColor(14,100,76);doc.text((sale?'Sales':'Purchase')+' Log',14,14);
+    doc.setFontSize(8);doc.setTextColor(100);doc.text('Generated: '+fmt(today()),14,20);
+    const rows2=[...f,['Total','','',num(f.reduce((a,r)=>a+r[3],0)),'']];
+    doc.autoTable({
+      head:[header],body:rows2,startY:24,
+      headStyles:{fillColor:[14,124,95],textColor:[255,255,255],fontStyle:'bold',fontSize:8},
+      bodyStyles:{fontSize:8},
+      didParseCell:d=>{if(d.row.index===rows2.length-1){d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[14,124,95];d.cell.styles.textColor=[255,255,255];}}
     });
-    rows = await api('/search?' + p);
-    const P = rows.filter(r => r.type === 'purchase').reduce((x, r) => x + r.qty, 0);
-    const S = rows.filter(r => r.type === 'sale').reduce((x, r) => x + r.qty, 0);
-
-    $('#sres').innerHTML = `
-      <div class="stats">
-        <div class="stat"><span>Matching</span><b>${rows.length}</b><small>records found</small></div>
-        <div class="stat"><span>Purchased</span><b class="pos">+${num(P)}</b><small>BKT</small></div>
-        <div class="stat"><span>Sold</span><b class="neg">-${num(S)}</b><small>BKT</small></div>
-        <div class="stat"><span>Net Movement</span><b>${num(P - S)}</b><small>BKT</small></div>
-      </div>
-
-      <div class="card">
-        <div class="row noprint">
-          <button class="btn s sm" id="c">⬇ Download CSV</button>
-          <button class="btn sm" id="p">📄 Download PDF</button>
-          <button class="btn s sm" onclick="print()">🖨️ Print</button>
-        </div>
-
-        ${rows.length ? `
-          <div class="tw" style="margin-top:12px">
-            <table>
-              <thead><tr><th>Date</th><th>Type</th><th>Name</th><th>Grade</th><th>Qty (BKT)</th><th>Balance After</th><th>Notes</th><th class="noprint">Actions</th></tr></thead>
-              <tbody>
-                ${rows.map(r => `
-                  <tr>
-                    <td><b>${fmt(r.date)}</b></td>
-                    <td><span class="badge ${r.type === 'sale' ? 's' : 'p'}">${r.type === 'sale' ? 'Sale' : 'Purchase'}</span></td>
-                    <td>${esc(r.party)}</td>
-                    <td><span class="chip">${esc(r.grade)}</span></td>
-                    <td><b>${num(r.qty)}</b></td>
-                    <td>${num(r.bal)}</td>
-                    <td style="color:var(--mu);font-size:13px">${esc(r.notes || '—')}</td>
-                    <td class="noprint"><button class="btn s sm" data-e="${r.id}">✏️ Edit</button></td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        ` : '<p style="color:var(--mu);padding:14px 0">No records match your criteria.</p>'}
-      </div>
-    `;
-
-    const H = ['Date', 'Type', 'Name', 'Grade', 'Qty (BKT)', 'Balance after'];
-    const R = () => rows.map(r => [fmt(r.date), r.type === 'sale' ? 'Sale' : 'Purchase', r.party, r.grade, num(r.qty), num(r.bal)]);
-    if (rows.length) {
-      $('#c').onclick = () => csv(H, R(), 'search');
-      $('#p').onclick = () => pdf(
-        'Grade Search',
-        H,
-        [...R(), ['Total', '', '', '', num(rows.reduce((x, r) => x + r.qty, 0)), '']],
-        'search',
-        (sel.size ? 'Grades: ' + [...sel].join(', ') : 'All grades') + (a || b ? '  |  ' + (fmt(a) || 'start') + ' to ' + (fmt(b) || 'today') : '')
-      );
-    }
-  });
-
-  $('#gc').onclick = e => {
-    const g = e.target.dataset.g;
-    if (!g) return;
-    sel.has(g) ? sel.delete(g) : sel.add(g);
-    e.target.classList.toggle('on');
-    load();
+    doc.save(type+'-log-'+today()+'.pdf');
   };
-
-  v.oninput = v.onchange = e => {
-    if (e.target.closest('#sf,#sg')) load();
-  };
-
-  $('#sg').onclick = e => {
-    const r = e.target.dataset.r;
-    if (!r) return;
-    const n = new Date(), d = new Date();
-    if (r === '7') d.setDate(n.getDate() - 6);
-    else if (r === 'm') d.setDate(1);
-    else if (r === 'y') { d.setMonth(0); d.setDate(1); }
-    if (r === 'x') {
-      sel.clear();
-      document.querySelectorAll('#gc .pill').forEach(x => x.classList.remove('on'));
-      $('#d1').value = $('#d2').value = $('#q1').value = $('#q2').value = $('#sq').value = $('#st').value = '';
-    } else {
-      $('#d1').value = iso(d);
-      $('#d2').value = today();
-    }
-    load();
-  };
-
-  $('#sres').onclick = guard(async e => {
-    const id = e.target.dataset.e;
-    if (!id) return;
-    const tx = await api('/tx/' + id);
-    openModal('');
-    const m = await entryForm(tx.type, tx, () => { closeModal(); load(); });
-    $('#mbody').innerHTML = '';
-    $('#mbody').append(m);
-  });
-
   load();
 }
 
-/* ---------- NAVIGATION ROUTING ---------- */
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
 const T = {
-  dash: 'Dashboard & Stock',
-  search: 'Search by Grade',
-  buy: 'Add Stock (Purchase)',
+  dash: 'Godown Stock — Company & Category Wise',
+  buy:  'Add Stock (Purchase)',
   sell: 'Record Sale',
   plog: 'Purchase Log',
   slog: 'Sales Log',
-  rep: 'Stock Movement Reports',
-  set: 'Settings & Backup'
+  rep:  'Stock Reports',
+  set:  'Settings & Backup'
 };
 
 async function go(p) {
-  // Update desktop tabs
-  document.querySelectorAll('.desktop-links button').forEach(b => b.classList.toggle('on', b.dataset.p === p));
-  // Update mobile bottom tabs
-  document.querySelectorAll('.b-tab').forEach(b => b.classList.toggle('on', b.dataset.p === p));
-
-  $('#title').textContent = T[p] || 'CashewTrack';
-  const v = $('#view');
-  v.onclick = v.onchange = null;
-  v.innerHTML = '';
-  window.scrollTo({ top: 0, behavior: 'instant' });
-  try {
-    await pages[p](v);
-  } catch (e) {
-    toast(e.message, 1);
-  }
+  document.querySelectorAll('.desktop-links button').forEach(b=>b.classList.toggle('on', b.dataset.p===p));
+  document.querySelectorAll('.b-tab').forEach(b=>b.classList.toggle('on', b.dataset.p===p));
+  $('#title').textContent = T[p]||'GodownStock';
+  const v=$('#view');
+  v.onclick=v.onchange=null; v.innerHTML='';
+  window.scrollTo({top:0,behavior:'instant'});
+  try { await pages[p](v); } catch(e) { toast(e.message,1); }
 }
 
-// Click handlers for top and bottom navs
-document.querySelector('.desktop-links').onclick = e => {
-  if (e.target.dataset.p) go(e.target.dataset.p);
-};
-document.querySelector('.bottom-nav').onclick = e => {
-  const btn = e.target.closest('.b-tab');
-  if (btn && btn.dataset.p) go(btn.dataset.p);
-};
+document.querySelector('.desktop-links').onclick = e=>{ if(e.target.dataset.p) go(e.target.dataset.p); };
+document.querySelector('.bottom-nav').onclick    = e=>{ const b=e.target.closest('.b-tab'); if(b&&b.dataset.p) go(b.dataset.p); };
 
-// INITIALIZATION
-(async () => {
-  $('#today').innerHTML = `📅 ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+(async ()=>{
+  $('#today').innerHTML = '📅 '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
   try {
-    [grades, { low }] = await Promise.all([api('/grades'), api('/settings')]);
-  } catch (e) {
-    toast(e.message, 1);
-  }
+    [grades, companies, { low }] = await Promise.all([api('/grades'), api('/companies'), api('/settings')]);
+  } catch(e) { toast(e.message,1); }
   go('dash');
 })();
 </script>
