@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<title>GodownStock — Company & Category Wise Stock</title>
+<title>GodownStock — Godown 1, Godown 2 &amp; Office Stock Management</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -22,6 +22,10 @@
   --red-soft: #fdeeed;
   --amber: #b26c00;
   --amber-soft: #fef4e5;
+  --blue: #1565c0;
+  --blue-soft: #e3f2fd;
+  --purple: #6a1b9a;
+  --purple-soft: #f3e5f5;
   --radius: 12px;
   --radius-lg: 16px;
   --shadow: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
@@ -86,7 +90,7 @@ nav.top-nav {
 .b-tab:active { transform: scale(0.93); }
 
 /* MAIN */
-main { max-width: 1300px; margin: 0 auto; padding: 24px 20px; }
+main { max-width: 1320px; margin: 0 auto; padding: 24px 20px; }
 header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
 h1 { margin: 0; font-size: 26px; font-weight: 700; color: var(--tx); }
 .date-pill {
@@ -115,15 +119,47 @@ h1 { margin: 0; font-size: 26px; font-weight: 700; color: var(--tx); }
 .stat b { display: block; font: 700 30px/1.1 'Space Grotesk'; margin: 6px 0 2px; }
 .stat small { color: var(--mu); font-size: 12px; }
 
+/* LOCATION TABS & PILLS */
+.loc-tabs {
+  display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+}
+.loc-tab-btn {
+  background: #fff; border: 1px solid var(--line); color: var(--tx);
+  padding: 8px 16px; border-radius: 99px; font: 600 13px 'IBM Plex Sans';
+  cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+}
+.loc-tab-btn:hover { border-color: var(--gold); }
+.loc-tab-btn.on { background: var(--gold); color: #fff; border-color: var(--gold); }
+
+/* LOCATION BADGES */
+.loc-badge {
+  display: inline-block; padding: 3px 8px; border-radius: 6px;
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.loc-g1 { background: var(--blue-soft); color: var(--blue); border: 1px solid #bbdefb; }
+.loc-g2 { background: var(--amber-soft); color: var(--amber); border: 1px solid #ffe0b2; }
+.loc-off { background: var(--purple-soft); color: var(--purple); border: 1px solid #e1bee7; }
+
+/* PDF BUTTON GROUP */
+.pdf-btn-group {
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+}
+.btn-pdf-g1 { background: #1976d2 !important; color: #fff !important; }
+.btn-pdf-g1:hover { background: #1565c0 !important; }
+.btn-pdf-g2 { background: #e65100 !important; color: #fff !important; }
+.btn-pdf-g2:hover { background: #bf360c !important; }
+.btn-pdf-off { background: #7b1fa2 !important; color: #fff !important; }
+.btn-pdf-off:hover { background: #6a1b9a !important; }
+
 /* MATRIX TABLE */
-.matrix-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+.matrix-table { width: 100%; border-collapse: collapse; min-width: 540px; }
 .matrix-table thead th {
   background: var(--gold); color: #fff;
   padding: 11px 14px; text-align: center;
   font: 700 11.5px 'IBM Plex Sans';
   text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap;
 }
-.matrix-table thead th:first-child { text-align: left; min-width: 130px; }
+.matrix-table thead th:first-child { text-align: left; min-width: 140px; }
 .matrix-table thead th:last-child { border-left: 2px solid rgba(255,255,255,0.3); }
 .matrix-table tbody td {
   padding: 10px 14px; text-align: center;
@@ -231,7 +267,6 @@ tr:hover td { background: #fafcfb; }
 .load-more-btn { width: 100%; margin-top: 14px; padding: 12px; background: #fff; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--gold); font-weight: 600; cursor: pointer; text-align: center; }
 .load-more-btn:active { background: var(--gold-soft); }
 
-/* COMPANY BADGE for purchase log */
 .comp-tag {
   display: inline-block; background: #e8f4f0; color: var(--gold);
   border: 1px solid var(--gold-soft); border-radius: 6px;
@@ -256,12 +291,6 @@ tr:hover td { background: #fafcfb; }
 }
 #toast.e { background: var(--red); }
 @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-/* FILTER BAR */
-.filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
-.search-input-wrap { position: relative; flex: 1; min-width: 180px; }
-.search-input-wrap input { padding-left: 38px; }
-.search-icon-inside { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--mu); pointer-events: none; font-size: 15px; }
 
 /* RESPONSIVE */
 @media (max-width: 900px) {
@@ -347,7 +376,7 @@ tr:hover td { background: #fafcfb; }
 <div id="toast"></div>
 
 <script>
-const $  = s => document.querySelector(s);
+const $   = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad = n => String(n).padStart(2,'0');
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -355,7 +384,8 @@ const today = () => iso(new Date());
 const fmt   = s => s ? s.split('-').reverse().join('/') : '';
 const num   = n => Math.round((Number(n)||0)*100)/100;
 
-let grades = [], companies = [], low = 5, lastMatrix = null;
+const LOCATIONS = ['GODOWN 1', 'GODOWN 2', 'OFFICE'];
+let grades = [], companies = [], low = 5, currentLocFilter = 'ALL';
 
 // ─── API HELPER ───────────────────────────────────────────────────────────────
 async function api(u, m='GET', b) {
@@ -381,74 +411,92 @@ function openModal(h) { $('#mbody').innerHTML = h; $('#modal').style.display='fl
 function closeModal()  { $('#modal').style.display='none'; }
 $('#modal').onclick = e => { if(e.target.id==='modal') closeModal(); };
 
-// ─── PDF — STOCK MATRIX (matches Excel format) ────────────────────────────────
-function stockMatrixPdf(data) {
-  const { categories, companies: comps, matrix: mat, compTotals, grandTotal } = data;
-  const doc = new jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-
-  // Title
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(18);
-  doc.setTextColor(14,100,76);
-  doc.text('GODOWN STOCK REPORT', 14, 16);
-
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(9);
-  doc.setTextColor(100);
-  const dateStr = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
-  doc.text('Date: ' + dateStr + '   |   GodownStock Management', 14, 22);
-  doc.setTextColor(0);
-
-  const head = [['Cashew Category', ...comps, 'Total']];
-  const body = categories.map(cat => [
-    cat,
-    ...comps.map(c => mat[cat][c] > 0 ? num(mat[cat][c]).toString() : '-'),
-    mat[cat]._total > 0 ? num(mat[cat]._total).toString() : '-'
-  ]);
-  // Grand total row
-  body.push(['Total', ...comps.map(c => num(compTotals[c]).toString()), num(grandTotal).toString()]);
-
-  doc.autoTable({
-    head,
-    body,
-    startY: 26,
-    headStyles: {
-      fillColor: [14,124,95], textColor:[255,255,255],
-      fontStyle:'bold', fontSize:10, cellPadding:4, halign:'center'
-    },
-    bodyStyles: { fontSize:10, cellPadding:3.5, halign:'center' },
-    columnStyles: {
-      0: { halign:'left', fontStyle:'bold', cellWidth:38 }
-    },
-    styles: { overflow:'linebreak', lineWidth:0.1, lineColor:[200,215,210] },
-    alternateRowStyles: { fillColor:[245,251,248] },
-    didParseCell: (d) => {
-      // Bold total row (last)
-      if (d.row.index === body.length - 1) {
-        d.cell.styles.fontStyle  = 'bold';
-        d.cell.styles.fillColor  = [14,124,95];
-        d.cell.styles.textColor  = [255,255,255];
-      }
-      // Last column (Total) slight style
-      if (d.column.index === head[0].length - 1 && d.row.index < body.length - 1) {
-        d.cell.styles.fontStyle = 'bold';
-      }
-    }
-  });
-
-  // Footer on each page
-  const pg = doc.internal.getNumberOfPages();
-  for (let i=1;i<=pg;i++) {
-    doc.setPage(i);
-    doc.setFontSize(7); doc.setTextColor(160);
-    doc.text('GodownStock — Cashew Stock Management System', 14, doc.internal.pageSize.height-6);
-    doc.text('Page '+i+' of '+pg, doc.internal.pageSize.width-28, doc.internal.pageSize.height-6);
-  }
-
-  doc.save('godown-stock-'+today()+'.pdf');
+function locBadgeHtml(loc) {
+  const l = String(loc || 'GODOWN 1').toUpperCase();
+  const cls = l === 'GODOWN 2' ? 'loc-g2' : l === 'OFFICE' ? 'loc-off' : 'loc-g1';
+  return `<span class="loc-badge ${cls}">${esc(l)}</span>`;
 }
 
-// ─── RENDER MATRIX TABLE (reusable) ──────────────────────────────────────────
+// ─── PDF GENERATOR — MATCHES EXCEL MATRIX FOR ANY LOCATION ────────────────────
+async function downloadLocationPdf(targetLoc) {
+  try {
+    toast(`Generating ${targetLoc} PDF...`);
+    const q = targetLoc === 'ALL' ? '' : `?location=${encodeURIComponent(targetLoc)}`;
+    const data = await api('/stock-matrix' + q);
+    const { categories, companies: comps, matrix: mat, compTotals, grandTotal } = data;
+
+    const doc = new jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+
+    let titleText = 'GODOWN STOCK REPORT';
+    if (targetLoc === 'GODOWN 1') titleText = 'GODOWN 1 — STOCK REPORT';
+    else if (targetLoc === 'GODOWN 2') titleText = 'GODOWN 2 — STOCK REPORT';
+    else if (targetLoc === 'OFFICE')   titleText = 'OFFICE STOCK REPORT';
+    else if (targetLoc === 'ALL')      titleText = 'CONSOLIDATED STOCK REPORT (ALL GODOWNS & OFFICE)';
+
+    // Title & Header
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(18);
+    doc.setTextColor(14,100,76);
+    doc.text(titleText, 14, 16);
+
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    const dateStr = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+    doc.text(`Location: ${targetLoc}   |   Date: ${dateStr}   |   GodownStock Management`, 14, 22);
+    doc.setTextColor(0);
+
+    const head = [['Cashew Category', ...comps, 'Total']];
+    const body = categories.map(cat => [
+      cat,
+      ...comps.map(c => mat[cat][c] > 0 ? num(mat[cat][c]).toString() : '-'),
+      mat[cat]._total > 0 ? num(mat[cat]._total).toString() : '-'
+    ]);
+    body.push(['Total', ...comps.map(c => num(compTotals[c]).toString()), num(grandTotal).toString()]);
+
+    doc.autoTable({
+      head,
+      body,
+      startY: 26,
+      headStyles: {
+        fillColor: [14,124,95], textColor:[255,255,255],
+        fontStyle:'bold', fontSize:10, cellPadding:4, halign:'center'
+      },
+      bodyStyles: { fontSize:10, cellPadding:3.5, halign:'center' },
+      columnStyles: {
+        0: { halign:'left', fontStyle:'bold', cellWidth:38 }
+      },
+      styles: { overflow:'linebreak', lineWidth:0.1, lineColor:[200,215,210] },
+      alternateRowStyles: { fillColor:[245,251,248] },
+      didParseCell: (d) => {
+        if (d.row.index === body.length - 1) {
+          d.cell.styles.fontStyle  = 'bold';
+          d.cell.styles.fillColor  = [14,124,95];
+          d.cell.styles.textColor  = [255,255,255];
+        }
+        if (d.column.index === head[0].length - 1 && d.row.index < body.length - 1) {
+          d.cell.styles.fontStyle = 'bold';
+        }
+      }
+    });
+
+    const pg = doc.internal.getNumberOfPages();
+    for (let i=1; i<=pg; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7); doc.setTextColor(160);
+      doc.text(`GodownStock — ${titleText}`, 14, doc.internal.pageSize.height-6);
+      doc.text('Page '+i+' of '+pg, doc.internal.pageSize.width-28, doc.internal.pageSize.height-6);
+    }
+
+    const fname = (targetLoc.toLowerCase().replace(/\s+/g,'-')) + '-stock-' + today() + '.pdf';
+    doc.save(fname);
+    toast(`${titleText} downloaded!`);
+  } catch(err) {
+    toast(err.message || 'PDF export failed', 1);
+  }
+}
+
+// ─── RENDER MATRIX TABLE ──────────────────────────────────────────────────────
 function renderMatrix(container, data) {
   const { categories, companies: comps, matrix: mat, compTotals, grandTotal } = data;
   container.innerHTML = `
@@ -487,16 +535,24 @@ function renderMatrix(container, data) {
   `;
 }
 
-// ─── ENTRY FORM ────────────────────────────────────────────────────────────────
+// ─── ENTRY FORM (PURCHASE & SALE) WITH LOCATION DROPDOWN ──────────────────────
 async function entryForm(type, tx, done) {
-  const [stock, buyers] = await Promise.all([
-    api('/stock'),
-    type==='sale' ? api('/parties?type=sale') : Promise.resolve([])
+  const sale = type === 'sale';
+  const defaultLoc = tx?.location || 'GODOWN 1';
+
+  let currentStock = await api(`/stock?location=${encodeURIComponent(defaultLoc)}`);
+  let avail = Object.fromEntries(currentStock.map(s=>[s.grade, s.balance]));
+
+  const [buyers] = await Promise.all([
+    sale ? api('/parties?type=sale') : Promise.resolve([])
   ]);
-  const avail = Object.fromEntries(stock.map(s=>[s.grade, s.balance]));
-  const own   = {};
+
+  const own = {};
   if (tx) tx.lines.forEach(l=>own[l.grade]=(own[l.grade]||0)+l.qty);
-  const sale = type==='sale';
+
+  const locOptions = LOCATIONS.map(l =>
+    `<option value="${esc(l)}"${(tx?.location||'GODOWN 1')===l?' selected':''}>${esc(l)}</option>`
+  ).join('');
 
   const partyHtml = sale
     ? `<input id="f-party" list="pl" value="${esc(tx?.party||'')}" placeholder="e.g. KUMAR TRADERS" autocomplete="off">
@@ -506,24 +562,28 @@ async function entryForm(type, tx, done) {
          ${companies.map(c=>`<option value="${esc(c)}"${tx?.party===c?' selected':''}>${esc(c)}</option>`).join('')}
        </select>`;
 
-  const opts = g =>
+  const getCatOptions = (selGrade) =>
     `<option value="">— Select Category —</option>` +
     grades.map(x =>
-      `<option${x===g?' selected':''} value="${esc(x)}">${esc(x)}${sale?' ('+num(avail[x]||0)+' avail)':''}</option>`
+      `<option${x===selGrade?' selected':''} value="${esc(x)}">${esc(x)}${sale?' ('+num(avail[x]||0)+' avail in '+(w?.querySelector('#f-loc')?.value||defaultLoc)+')':''}</option>`
     ).join('');
 
   const lineHtml = l => `
     <div class="ln">
-      <select>${opts(l?.grade)}</select>
+      <select>${getCatOptions(l?.grade)}</select>
       <input type="number" inputmode="decimal" min="0" step="any" placeholder="Qty (BKT)" value="${l?.qty??''}">
       <button type="button" class="btn d sm" title="Remove" style="padding:8px 12px;font-size:16px">✕</button>
     </div>`;
 
   const w = document.createElement('div');
   w.innerHTML = `
-    <h2>${tx?'Edit':'New'} ${sale?'Sale':'Stock Purchase'}</h2>
+    <h2>${tx?'Edit':'New'} ${sale?'Sale (Deduct Stock)':'Stock Purchase (Add Stock)'}</h2>
     <div class="row">
       <div><label>Date</label><input type="date" id="f-date" value="${tx?.date||today()}"></div>
+      <div>
+        <label style="color:var(--gold);font-weight:700">📍 ${sale ? 'Deduct From (Godown / Location)' : 'Add Stock To (Godown / Location)'}</label>
+        <select id="f-loc">${locOptions}</select>
+      </div>
       <div><label>${sale?'Buyer Name':'Company / Supplier'}</label>${partyHtml}</div>
     </div>
     <label>Items — Categories &amp; Quantities</label>
@@ -542,6 +602,21 @@ async function entryForm(type, tx, done) {
   const L = w.querySelector('#lines');
   (tx?tx.lines:[null]).forEach(l=>L.insertAdjacentHTML('beforeend',lineHtml(l)));
 
+  // If sale, changing location dynamically refreshes available stock counts
+  if (sale) {
+    w.querySelector('#f-loc').onchange = async () => {
+      const chosenLoc = w.querySelector('#f-loc').value;
+      currentStock = await api(`/stock?location=${encodeURIComponent(chosenLoc)}`);
+      avail = Object.fromEntries(currentStock.map(s=>[s.grade, s.balance]));
+      // update select options
+      L.querySelectorAll('.ln').forEach(row => {
+        const sel = row.querySelector('select');
+        const currVal = sel.value;
+        sel.innerHTML = getCatOptions(currVal);
+      });
+    };
+  }
+
   L.onclick = e => {
     if (e.target.tagName==='BUTTON' && L.children.length>1) e.target.closest('.ln').remove();
   };
@@ -549,6 +624,7 @@ async function entryForm(type, tx, done) {
   w.querySelector('#cancel-btn').onclick = ()=>tx?closeModal():done(true);
 
   w.querySelector('#save-btn').onclick = guard(async ()=>{
+    const selectedLoc = w.querySelector('#f-loc').value;
     const lines = [...L.children].map(r=>({
       grade: r.querySelector('select').value,
       qty:   r.querySelector('input').value
@@ -561,17 +637,19 @@ async function entryForm(type, tx, done) {
       const need={};
       lines.forEach(l=>need[l.grade]=(need[l.grade]||0)+(+l.qty));
       const over=Object.keys(need).filter(g=>need[g]>(avail[g]||0)+(own[g]||0));
-      if (over.length && !confirm('Not enough stock for: '+over.join(', ')+'. Save anyway?')) return;
+      if (over.length && !confirm(`Not enough stock in ${selectedLoc} for: `+over.join(', ')+'. Save anyway?')) return;
     }
+
     const body = {
       type,
-      date:  w.querySelector('#f-date').value,
-      party: w.querySelector('#f-party').value,
+      date:     w.querySelector('#f-date').value,
+      location: selectedLoc,
+      party:    w.querySelector('#f-party').value,
       lines,
-      notes: w.querySelector('#f-notes').value
+      notes:    w.querySelector('#f-notes').value
     };
     tx ? await api('/tx/'+tx._id,'PUT',body) : await api('/tx','POST',body);
-    toast(tx?'Changes saved':sale?'Sale recorded ✓':'Stock added ✓');
+    toast(tx?'Changes saved':sale?`Sale recorded (${selectedLoc}) ✓`:`Stock added to ${selectedLoc} ✓`);
     done();
   });
   return w;
@@ -580,50 +658,97 @@ async function entryForm(type, tx, done) {
 // ─── PAGES ────────────────────────────────────────────────────────────────────
 const pages = {
 
-  /* DASHBOARD — Company × Category Matrix */
+  /* DASHBOARD */
   async dash(v) {
     const t = today();
-    const [matrix, dayStock] = await Promise.all([
-      api('/stock-matrix'),
-      api('/stock?from='+t+'&to='+t)
-    ]);
-    lastMatrix = matrix;
-    const { categories, companies: comps, matrix: mat, compTotals, grandTotal } = matrix;
-    const totalAdded = dayStock.reduce((a,s)=>a+(s.added||0),0);
-    const totalSold  = dayStock.reduce((a,s)=>a+(s.sold||0),0);
-    const lows = categories.filter(c=>mat[c]._total>0&&mat[c]._total<low);
-    const outs = categories.filter(c=>mat[c]._total<=0);
 
     v.innerHTML = `
-      <div class="stats">
-        <div class="stat"><span>Total Stock</span><b>${num(grandTotal)}</b><small>BKT in godown</small></div>
-        <div class="stat"><span>Added Today</span><b class="pos">+${num(totalAdded)}</b><small>BKT received</small></div>
-        <div class="stat"><span>Sold Today</span><b class="neg">-${num(totalSold)}</b><small>BKT dispatched</small></div>
-        <div class="stat"><span>Low / Out</span><b>${lows.length+outs.length}</b><small>${lows.length} low, ${outs.length} empty</small></div>
-      </div>
+      <div class="stats" id="dash-stats"></div>
 
       <div class="card">
         <h2>
-          <span>📊 Current Stock — Company &amp; Category Wise</span>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn sm noprint" id="btn-pdf">📄 Download PDF</button>
-            <button class="btn s sm noprint" onclick="print()">🖨️ Print</button>
+          <span>📊 Godown Stock Matrix</span>
+          <div class="pdf-btn-group noprint">
+            <button class="btn sm btn-pdf-g1" id="pdf-g1">📄 Godown 1 PDF</button>
+            <button class="btn sm btn-pdf-g2" id="pdf-g2">📄 Godown 2 PDF</button>
+            <button class="btn sm btn-pdf-off" id="pdf-off">📄 Office Stock PDF</button>
+            <button class="btn sm s" id="pdf-all" style="font-size:12px">📄 All Stock PDF</button>
+            <button class="btn s sm" onclick="print()">🖨️ Print</button>
           </div>
         </h2>
+
+        <!-- Location Filter Tabs -->
+        <div class="loc-tabs noprint">
+          <span style="font-size:13px;font-weight:600;color:var(--mu);margin-right:4px">View Location:</span>
+          <button class="loc-tab-btn on" data-loc="ALL">🏢 All Locations</button>
+          <button class="loc-tab-btn" data-loc="GODOWN 1">🏭 Godown 1</button>
+          <button class="loc-tab-btn" data-loc="GODOWN 2">🏭 Godown 2</button>
+          <button class="loc-tab-btn" data-loc="OFFICE">🏬 Office</button>
+        </div>
+
         <div id="matrix-out"></div>
       </div>
 
-      ${(outs.length||lows.length)?`
-        <div class="card noprint">
-          <h2>⚠️ Stock Alerts</h2>
-          ${outs.map(c=>`<div class="alert">🚨 <div><b>${esc(c)}</b> is completely out of stock</div></div>`).join('')}
-          ${lows.map(c=>`<div class="alert w">⚠️ <div><b>${esc(c)}</b> only ${num(mat[c]._total)} BKT left (below ${low} BKT limit)</div></div>`).join('')}
-        </div>
-      `:''}
+      <div class="card noprint" id="alert-card" style="display:none">
+        <h2>⚠️ Low Stock Alerts</h2>
+        <div id="alert-list"></div>
+      </div>
     `;
 
-    renderMatrix(v.querySelector('#matrix-out'), matrix);
-    v.querySelector('#btn-pdf').onclick = ()=>stockMatrixPdf(lastMatrix);
+    // Hook up PDF Buttons
+    v.querySelector('#pdf-g1').onclick  = () => downloadLocationPdf('GODOWN 1');
+    v.querySelector('#pdf-g2').onclick  = () => downloadLocationPdf('GODOWN 2');
+    v.querySelector('#pdf-off').onclick = () => downloadLocationPdf('OFFICE');
+    v.querySelector('#pdf-all').onclick = () => downloadLocationPdf('ALL');
+
+    const loadMatrixData = async (loc) => {
+      currentLocFilter = loc;
+      const q = loc === 'ALL' ? '' : `?location=${encodeURIComponent(loc)}`;
+      const [matrix, dayStock] = await Promise.all([
+        api('/stock-matrix' + q),
+        api(`/stock?from=${t}&to=${t}` + (loc==='ALL'?'':`&location=${encodeURIComponent(loc)}`))
+      ]);
+
+      const { categories, matrix: mat, grandTotal } = matrix;
+      const totalAdded = dayStock.reduce((a,s)=>a+(s.added||0),0);
+      const totalSold  = dayStock.reduce((a,s)=>a+(s.sold||0),0);
+      const lows = categories.filter(c=>mat[c]._total>0 && mat[c]._total<low);
+      const outs = categories.filter(c=>mat[c]._total<=0);
+
+      const locLabel = loc === 'ALL' ? 'Total (All Godowns)' : loc;
+      v.querySelector('#dash-stats').innerHTML = `
+        <div class="stat"><span>Stock (${locLabel})</span><b>${num(grandTotal)}</b><small>BKT currently available</small></div>
+        <div class="stat"><span>Added Today</span><b class="pos">+${num(totalAdded)}</b><small>BKT received</small></div>
+        <div class="stat"><span>Sold Today</span><b class="neg">-${num(totalSold)}</b><small>BKT dispatched</small></div>
+        <div class="stat"><span>Low / Out</span><b>${lows.length+outs.length}</b><small>${lows.length} low, ${outs.length} empty</small></div>
+      `;
+
+      renderMatrix(v.querySelector('#matrix-out'), matrix);
+
+      // Stock Alerts
+      const alertCard = v.querySelector('#alert-card');
+      const alertList = v.querySelector('#alert-list');
+      if (lows.length || outs.length) {
+        alertCard.style.display = 'block';
+        alertList.innerHTML = [
+          ...outs.map(c=>`<div class="alert">🚨 <div><b>${esc(c)}</b> is completely out of stock ${loc==='ALL'?'':'in '+loc}</div></div>`),
+          ...lows.map(c=>`<div class="alert w">⚠️ <div><b>${esc(c)}</b> only ${num(mat[c]._total)} BKT left ${loc==='ALL'?'':'in '+loc} (limit: ${low} BKT)</div></div>`)
+        ].join('');
+      } else {
+        alertCard.style.display = 'none';
+      }
+    };
+
+    // Location Tabs click
+    v.querySelectorAll('.loc-tab-btn').forEach(btn => {
+      btn.onclick = () => {
+        v.querySelectorAll('.loc-tab-btn').forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+        loadMatrixData(btn.dataset.loc);
+      };
+    });
+
+    await loadMatrixData(currentLocFilter);
   },
 
   async buy(v) { v.append(await entryForm('purchase',null,()=>go('dash'))); },
@@ -632,26 +757,44 @@ const pages = {
   async plog(v){ return renderLogPage(v,'purchase'); },
   async slog(v){ return renderLogPage(v,'sale'); },
 
-  /* REPORTS — Stock Matrix PDF */
+  /* REPORTS */
   async rep(v) {
     v.innerHTML = `
       <div class="card">
         <h2>
-          <span>📋 Stock Matrix Report</span>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn sm noprint" id="r-pdf">📄 Download PDF</button>
-            <button class="btn s sm noprint" onclick="print()">🖨️ Print</button>
-          </div>
+          <span>📋 Download Stock Reports (PDF)</span>
         </h2>
-        <p style="color:var(--mu);font-size:13px;margin:0 0 16px">
-          Shows current godown stock broken down by company (supplier) and cashew category.
+        <p style="color:var(--mu);font-size:13.5px;margin:0 0 16px">
+          Download formatted, print-ready stock reports formatted identical to the Excel Category Matrix:
         </p>
+        <div class="pdf-btn-group noprint" style="gap:10px;margin-bottom:20px">
+          <button class="btn btn-pdf-g1" id="r-pdf-g1" style="flex:1">📄 Godown 1 Stock PDF</button>
+          <button class="btn btn-pdf-g2" id="r-pdf-g2" style="flex:1">📄 Godown 2 Stock PDF</button>
+          <button class="btn btn-pdf-off" id="r-pdf-off" style="flex:1">📄 Office Stock PDF</button>
+          <button class="btn s" id="r-pdf-all" style="flex:1">📄 All Stock (Consolidated)</button>
+        </div>
+
+        <div class="loc-tabs noprint">
+          <span style="font-size:13px;font-weight:600;color:var(--mu);margin-right:4px">Preview Matrix:</span>
+          <button class="loc-tab-btn on" data-rloc="ALL">🏢 All Locations</button>
+          <button class="loc-tab-btn" data-rloc="GODOWN 1">🏭 Godown 1</button>
+          <button class="loc-tab-btn" data-rloc="GODOWN 2">🏭 Godown 2</button>
+          <button class="loc-tab-btn" data-rloc="OFFICE">🏬 Office</button>
+        </div>
         <div id="rep-matrix"></div>
       </div>
 
       <div class="card">
         <h2>Stock Movement (Date Range)</h2>
         <div class="row">
+          <div><label>Location</label>
+            <select id="rm-loc">
+              <option value="ALL">All Locations</option>
+              <option value="GODOWN 1">Godown 1</option>
+              <option value="GODOWN 2">Godown 2</option>
+              <option value="OFFICE">Office</option>
+            </select>
+          </div>
           <div><label>From Date</label><input type="date" id="rf"></div>
           <div><label>To Date</label><input type="date" id="rt"></div>
           <button class="btn s sm" data-q="d" style="align-self:flex-end">Today</button>
@@ -667,16 +810,33 @@ const pages = {
       </div>
     `;
 
-    // Load current stock matrix
-    let matData = await api('/stock-matrix');
-    renderMatrix(v.querySelector('#rep-matrix'), matData);
-    v.querySelector('#r-pdf').onclick = ()=>stockMatrixPdf(matData);
+    v.querySelector('#r-pdf-g1').onclick  = () => downloadLocationPdf('GODOWN 1');
+    v.querySelector('#r-pdf-g2').onclick  = () => downloadLocationPdf('GODOWN 2');
+    v.querySelector('#r-pdf-off').onclick = () => downloadLocationPdf('OFFICE');
+    v.querySelector('#r-pdf-all').onclick = () => downloadLocationPdf('ALL');
+
+    const loadRepMatrix = async (loc) => {
+      const q = loc === 'ALL' ? '' : `?location=${encodeURIComponent(loc)}`;
+      const matData = await api('/stock-matrix' + q);
+      renderMatrix(v.querySelector('#rep-matrix'), matData);
+    };
+
+    v.querySelectorAll('[data-rloc]').forEach(btn => {
+      btn.onclick = () => {
+        v.querySelectorAll('[data-rloc]').forEach(b=>b.classList.remove('on'));
+        btn.classList.add('on');
+        loadRepMatrix(btn.dataset.rloc);
+      };
+    });
+    loadRepMatrix('ALL');
 
     // Movement report
     let mvData = [];
     const loadMv = guard(async ()=>{
-      const f=$('#rf').value, t=$('#rt').value;
-      mvData = await api(`/stock?from=${f}&to=${t}`);
+      const loc = $('#rm-loc').value;
+      const f   = $('#rf').value, t = $('#rt').value;
+      const q   = `/stock?from=${f}&to=${t}` + (loc==='ALL'?'':`&location=${encodeURIComponent(loc)}`);
+      mvData = await api(q);
       $('#mv-out').innerHTML = mvData.length ? `
         <table>
           <thead><tr><th>Category</th><th>Added (BKT)</th><th>Sold (BKT)</th><th>Balance Now</th></tr></thead>
@@ -698,7 +858,7 @@ const pages = {
       ` : '<p style="color:var(--mu);padding:14px 0">No data for selected period.</p>';
     });
 
-    v.onchange = e=>{ if(e.target.type==='date') loadMv(); };
+    v.onchange = e=>{ if(e.target.type==='date' || e.target.id==='rm-loc') loadMv(); };
     v.onclick = e=>{
       const q=e.target.dataset.q;
       if(!q) return;
@@ -711,14 +871,16 @@ const pages = {
     };
     v.querySelector('#mv-csv').onclick = ()=>{
       const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+      const loc=$('#rm-loc').value;
       const rows=[['Category','Added','Sold','Balance'],...mvData.map(s=>[s.grade,num(s.added),num(s.sold),num(s.balance)])];
       const b=new Blob([rows.map(r=>r.map(q).join(',')).join('\n')],{type:'text/csv'});
-      const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='movement-'+today()+'.csv';a.click();
+      const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`movement-${loc}-${today()}.csv`;a.click();
     };
     v.querySelector('#mv-pdf').onclick = ()=>{
+      const loc=$('#rm-loc').value;
       const doc=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
       doc.setFontSize(14);doc.setTextColor(14,100,76);
-      doc.text('Stock Movement Report',14,14);
+      doc.text(`Stock Movement Report (${loc})`,14,14);
       doc.setFontSize(8);doc.setTextColor(100);
       const p=$('#rf').value,q=$('#rt').value;
       doc.text('Period: '+(p?fmt(p):'start')+' to '+(q?fmt(q):'today')+'  |  Generated: '+fmt(today()),14,20);
@@ -731,13 +893,13 @@ const pages = {
         bodyStyles:{fontSize:9},
         didParseCell:d=>{if(d.row.index===rows.length-1){d.cell.styles.fontStyle='bold';d.cell.styles.fillColor=[14,124,95];d.cell.styles.textColor=[255,255,255];}}
       });
-      doc.save('movement-'+today()+'.pdf');
+      doc.save(`movement-${loc}-${today()}.pdf`);
     };
     $('#rf').value = today().slice(0,8)+'01'; $('#rt').value = today();
     loadMv();
   },
 
-  /* SETTINGS — Companies + Categories */
+  /* SETTINGS */
   async set(v) {
     const draw = async ()=>{
       const [cats, comps] = await Promise.all([api('/grades'), api('/companies')]);
@@ -745,7 +907,6 @@ const pages = {
 
       v.innerHTML = `
         <div class="two">
-          <!-- LEFT: Categories -->
           <div class="card">
             <h2>Cashew Categories (${cats.length})</h2>
             <div class="row">
@@ -766,7 +927,6 @@ const pages = {
             </div>
           </div>
 
-          <!-- RIGHT: Companies + Other -->
           <div>
             <div class="card">
               <h2>Companies / Suppliers (${comps.length})</h2>
@@ -786,6 +946,18 @@ const pages = {
                     </tr>`).join('')}
                 </tbody></table>
               </div>
+            </div>
+
+            <div class="card">
+              <h2>Configured Godowns / Locations</h2>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
+                ${locBadgeHtml('GODOWN 1')}
+                ${locBadgeHtml('GODOWN 2')}
+                ${locBadgeHtml('OFFICE')}
+              </div>
+              <p style="color:var(--mu);font-size:12.5px;margin:0">
+                Stock is partitioned and tracked across Godown 1, Godown 2 and Office Stock.
+              </p>
             </div>
 
             <div class="card">
@@ -844,10 +1016,8 @@ const pages = {
       });
 
       v.onclick = guard(async e=>{
-        // Delete category
         const dc=e.target.dataset.delCat;
         if(dc){ if(!confirm('Remove category "'+dc+'"?')) return; await api('/grades/'+encodeURIComponent(dc),'DELETE'); grades=await api('/grades'); draw(); toast('Category removed'); return; }
-        // Rename category
         const rc=e.target.dataset.renameCat;
         if(rc){
           const row=document.getElementById('cat-'+rc); if(!row) return;
@@ -862,10 +1032,8 @@ const pages = {
             await api('/grades/'+encodeURIComponent(rc),'PATCH',{name:n}); grades=await api('/grades'); draw(); toast('Category renamed');
           }); return;
         }
-        // Delete company
         const dco=e.target.dataset.delComp;
         if(dco){ if(!confirm('Remove company "'+dco+'"?')) return; await api('/companies/'+encodeURIComponent(dco),'DELETE'); companies=await api('/companies'); draw(); toast('Company removed'); return; }
-        // Rename company
         const rco=e.target.dataset.renameComp;
         if(rco){
           const row=document.getElementById('comp-'+rco); if(!row) return;
@@ -898,6 +1066,15 @@ async function renderLogPage(v, type) {
         <button class="btn s sm noprint" id="btn-toggle-view" style="font-size:12px">📱 Card View</button>
       </h2>
       <div class="row" id="flt">
+        <div>
+          <label>Godown / Location</label>
+          <select id="lloc">
+            <option value="ALL">All Locations</option>
+            <option value="GODOWN 1">Godown 1</option>
+            <option value="GODOWN 2">Godown 2</option>
+            <option value="OFFICE">Office</option>
+          </select>
+        </div>
         <div><label>From</label><input type="date" id="lf"></div>
         <div><label>To</label><input type="date" id="lt"></div>
         <div>
@@ -933,19 +1110,19 @@ async function renderLogPage(v, type) {
   };
   $('#btn-toggle-view').onclick = ()=>{ forceCards=!forceCards; updToggle(); };
 
-  const flat = ()=>rows.flatMap(t=>t.lines.map(l=>[fmt(t.date), t.party, l.grade, num(l.qty), t.notes||'']));
+  const flat = ()=>rows.flatMap(t=>t.lines.map(l=>[fmt(t.date), t.location||'GODOWN 1', t.party, l.grade, num(l.qty), t.notes||'']));
 
   const renderRows = ()=>{
     const vis = rows.slice(0,displayLimit);
-    // Desktop table
     $('#tb-desktop').innerHTML = vis.length ? `
       <table>
         <thead><tr>
-          <th>Date</th><th>${who}</th><th>Items (BKT)</th><th>Notes</th><th class="noprint">Actions</th>
+          <th>Date</th><th>Location</th><th>${who}</th><th>Items (BKT)</th><th>Notes</th><th class="noprint">Actions</th>
         </tr></thead>
         <tbody>
           ${vis.map(t=>`<tr>
             <td><b>${fmt(t.date)}</b></td>
+            <td>${locBadgeHtml(t.location)}</td>
             <td>${sale?esc(t.party):`<span class="comp-tag">${esc(t.party)}</span>`}</td>
             <td>${t.lines.map(l=>`<span class="chip">${esc(l.grade)}<em>${num(l.qty)}</em></span>`).join('')}</td>
             <td style="color:var(--mu);font-size:13px">${esc(t.notes||'—')}</td>
@@ -958,12 +1135,14 @@ async function renderLogPage(v, type) {
       </table>
     ` : '<p style="color:var(--mu);padding:14px 0">No entries match your filters.</p>';
 
-    // Mobile cards
     $('#tb-mobile').innerHTML = vis.length ? vis.map(t=>`
       <div class="tx-card">
         <div class="tx-card-head">
           <div class="tx-card-party">${sale?esc(t.party):`<span class="comp-tag">${esc(t.party)}</span>`}</div>
-          <span class="badge ${sale?'s':'p'}">${sale?'Sale':'Purchase'}</span>
+          <div style="display:flex;gap:4px">
+            ${locBadgeHtml(t.location)}
+            <span class="badge ${sale?'s':'p'}">${sale?'Sale':'Purchase'}</span>
+          </div>
         </div>
         <div class="tx-card-date">📅 ${fmt(t.date)}</div>
         <div class="tx-card-items">${t.lines.map(l=>`<span class="chip">${esc(l.grade)}<em>${num(l.qty)} BKT</em></span>`).join('')}</div>
@@ -975,7 +1154,6 @@ async function renderLogPage(v, type) {
       </div>
     `).join('') : '<p style="color:var(--mu);padding:14px 0">No entries match your filters.</p>';
 
-    // Load more
     if (rows.length>displayLimit) {
       $('#load-more-wrap').innerHTML=`<button class="load-more-btn" id="btn-more">Showing ${displayLimit} of ${rows.length} — Load more ↓</button>`;
       $('#btn-more').onclick=()=>{ displayLimit+=35; renderRows(); };
@@ -987,12 +1165,19 @@ async function renderLogPage(v, type) {
   };
 
   const load = guard(async()=>{
-    const p=new URLSearchParams({type,from:$('#lf').value,to:$('#lt').value,grade:$('#lg').value,q:$('#lq').value});
+    const p=new URLSearchParams({
+      type,
+      location: $('#lloc').value,
+      from: $('#lf').value,
+      to: $('#lt').value,
+      grade: $('#lg').value,
+      q: $('#lq').value
+    });
     displayLimit=35; rows=await api('/tx?'+p); renderRows();
   });
 
   $('#flt').oninput = load;
-  $('#lc').onclick  = ()=>{ $('#lf').value=$('#lt').value=$('#lg').value=$('#lq').value=''; load(); };
+  $('#lc').onclick  = ()=>{ $('#lloc').value='ALL'; $('#lf').value=$('#lt').value=$('#lg').value=$('#lq').value=''; load(); };
 
   const handleAction = guard(async e=>{
     const id=e.target.dataset.e||e.target.dataset.x; if(!id) return;
@@ -1007,8 +1192,7 @@ async function renderLogPage(v, type) {
   $('#tb-desktop').onclick = handleAction;
   $('#tb-mobile').onclick  = handleAction;
 
-  const H=[fmt?'Date':'',...['Date',who,'Category','Qty (BKT)','Notes']];
-  const header=['Date',who,'Category','Qty (BKT)','Notes'];
+  const header=['Date','Location',who,'Category','Qty (BKT)','Notes'];
   $('#log-csv').onclick=()=>{
     const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
     const r=flat();
@@ -1020,7 +1204,7 @@ async function renderLogPage(v, type) {
     const doc=new jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
     doc.setFontSize(14);doc.setTextColor(14,100,76);doc.text((sale?'Sales':'Purchase')+' Log',14,14);
     doc.setFontSize(8);doc.setTextColor(100);doc.text('Generated: '+fmt(today()),14,20);
-    const rows2=[...f,['Total','','',num(f.reduce((a,r)=>a+r[3],0)),'']];
+    const rows2=[...f,['Total','','','',num(f.reduce((a,r)=>a+r[4],0)),'']];
     doc.autoTable({
       head:[header],body:rows2,startY:24,
       headStyles:{fillColor:[14,124,95],textColor:[255,255,255],fontStyle:'bold',fontSize:8},
@@ -1034,12 +1218,12 @@ async function renderLogPage(v, type) {
 
 // ─── NAVIGATION ───────────────────────────────────────────────────────────────
 const T = {
-  dash: 'Godown Stock — Company & Category Wise',
+  dash: 'Godown Stock — Company & Category Matrix',
   buy:  'Add Stock (Purchase)',
-  sell: 'Record Sale',
+  sell: 'Record Sale (Deduct Stock)',
   plog: 'Purchase Log',
   slog: 'Sales Log',
-  rep:  'Stock Reports',
+  rep:  'Stock Reports & PDFs',
   set:  'Settings & Backup'
 };
 

@@ -23,14 +23,16 @@ app.use((req, res, next) => {
 });
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const VALID_LOCATIONS = ['GODOWN 1', 'GODOWN 2', 'OFFICE'];
 
 // ─── MODELS ───────────────────────────────────────────────────────────────────
 const Tx = mongoose.model('Tx', new mongoose.Schema({
-  type:  { type: String, enum: ['purchase', 'sale'], required: true, index: true },
-  date:  { type: String, required: true, match: DATE, index: true },
-  party: { type: String, required: true, trim: true, uppercase: true },
-  lines: [{ _id: false, grade: { type: String, required: true }, qty: { type: Number, required: true, min: 0.0001 } }],
-  notes: { type: String, default: '' },
+  type:     { type: String, enum: ['purchase', 'sale'], required: true, index: true },
+  date:     { type: String, required: true, match: DATE, index: true },
+  party:    { type: String, required: true, trim: true, uppercase: true },
+  location: { type: String, default: 'GODOWN 1', trim: true, uppercase: true, index: true },
+  lines:    [{ _id: false, grade: { type: String, required: true }, qty: { type: Number, required: true, min: 0.0001 } }],
+  notes:    { type: String, default: '' },
 }, { timestamps: true }));
 
 const Grade   = mongoose.model('Grade',   new mongoose.Schema({ name: { type: String, unique: true, required: true } }));
@@ -54,7 +56,9 @@ const clean = b => {
   if (lines.some(l => !(l.qty > 0))) throw new Error('Every quantity must be above 0');
   if (!DATE.test(b.date || ''))  throw new Error('Invalid date');
   if (!(b.party || '').trim())   throw new Error('Company / Name is required');
-  return { type: b.type, date: b.date, party: b.party, lines, notes: b.notes || '' };
+  let location = String(b.location || 'GODOWN 1').trim().toUpperCase();
+  if (!VALID_LOCATIONS.includes(location)) location = 'GODOWN 1';
+  return { type: b.type, date: b.date, party: b.party, location, lines, notes: b.notes || '' };
 };
 
 // ─── GRADE / CATEGORY ENDPOINTS ───────────────────────────────────────────────
@@ -120,9 +124,10 @@ app.put('/api/settings', h(async (q, s) => { await Setting.updateOne({ key: 'low
 // ─── TRANSACTION ENDPOINTS ────────────────────────────────────────────────────
 app.get('/api/tx', h(async (q, s) => {
   const m = { ...range(q.query) };
-  if (q.query.type)  m.type = q.query.type;
-  if (q.query.grade) m['lines.grade'] = q.query.grade;
-  if (q.query.q)     m.party = new RegExp(q.query.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+  if (q.query.type)     m.type = q.query.type;
+  if (q.query.location && q.query.location !== 'ALL') m.location = q.query.location;
+  if (q.query.grade)    m['lines.grade'] = q.query.grade;
+  if (q.query.q)        m.party = new RegExp(q.query.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
   s.json(await Tx.find(m).sort({ date: -1, createdAt: -1 }));
 }));
 app.post('/api/tx',      h(async (q, s) => s.json(await Tx.create(clean(q.body)))));
@@ -131,13 +136,19 @@ app.delete('/api/tx/:id',h(async (q, s) => { await Tx.findByIdAndDelete(q.params
 app.get('/api/tx/:id',   h(async (q, s) => s.json(await Tx.findById(q.params.id))));
 app.get('/api/parties',  h(async (q, s) => s.json(await Tx.distinct('party', { type: q.query.type }))));
 
-// ─── STOCK SUMMARY (for entry forms) ─────────────────────────────────────────
+// ─── STOCK SUMMARY (for entry forms & validation) ─────────────────────────────
 app.get('/api/stock', h(async (q, s) => {
+  const inRangeFilter = range(q.query);
+  const allFilter = {};
+  if (q.query.location && q.query.location !== 'ALL') {
+    inRangeFilter.location = q.query.location;
+    allFilter.location     = q.query.location;
+  }
   const agg = m => Tx.aggregate([
     { $match: m }, { $unwind: '$lines' },
     { $group: { _id: { g: '$lines.grade', t: '$type' }, n: { $sum: '$lines.qty' } } }
   ]);
-  const [inRange, all, grades] = await Promise.all([agg(range(q.query)), agg({}), Grade.find().sort('_id')]);
+  const [inRange, all, grades] = await Promise.all([agg(inRangeFilter), agg(allFilter), Grade.find().sort('_id')]);
   const get = (a, g, t) => (a.find(x => x._id.g === g && x._id.t === t) || { n: 0 }).n;
   const names = [...new Set([...grades.map(g => g.name), ...all.map(x => x._id.g)])];
   s.json(names.map(g => ({
@@ -148,17 +159,22 @@ app.get('/api/stock', h(async (q, s) => {
   })));
 }));
 
-// ─── STOCK MATRIX — Company × Category Pivot ─────────────────────────────────
+// ─── STOCK MATRIX — Company × Category Pivot (Filterable by Godown / Location)
 app.get('/api/stock-matrix', h(async (q, s) => {
+  const txFilter = {};
+  if (q.query.location && q.query.location !== 'ALL') {
+    txFilter.location = q.query.location;
+  }
+
   const [allTx, grades, companies] = await Promise.all([
-    Tx.find().sort({ date: 1, createdAt: 1 }),
+    Tx.find(txFilter).sort({ date: 1, createdAt: 1 }),
     Grade.find().sort('_id'),
     Company.find().sort('_id'),
   ]);
 
   // Aggregate purchases by (grade, company) and sales by grade
-  const purchByCompGrade = {};   // grade → { company: qty }
-  const soldByGrade      = {};   // grade → qty
+  const purchByCompGrade = {};
+  const soldByGrade      = {};
 
   for (const tx of allTx) {
     for (const l of tx.lines) {
@@ -171,11 +187,11 @@ app.get('/api/stock-matrix', h(async (q, s) => {
     }
   }
 
-  const compNames = companies.map(c => c.name);
-  const catNames  = grades.map(g => g.name);
-  const matrix    = {};
+  const compNames  = companies.map(c => c.name);
+  const catNames   = grades.map(g => g.name);
+  const matrix     = {};
   const compTotals = Object.fromEntries(compNames.map(c => [c, 0]));
-  let grandTotal  = 0;
+  let grandTotal   = 0;
 
   for (const cat of catNames) {
     const purch  = purchByCompGrade[cat] || {};
@@ -186,17 +202,24 @@ app.get('/api/stock-matrix', h(async (q, s) => {
     matrix[cat] = { _total: balance };
     for (const comp of compNames) {
       const compP   = purch[comp] || 0;
-      // Proportional attribution of remaining balance per company
       const compBal = totalP > 0
         ? Math.round((compP / totalP) * balance * 100) / 100
         : 0;
-      matrix[cat][comp]      = compBal;
-      compTotals[comp]       = Math.round((compTotals[comp] + compBal) * 100) / 100;
+      matrix[cat][comp] = compBal;
+      compTotals[comp]  = Math.round((compTotals[comp] + compBal) * 100) / 100;
     }
     grandTotal = Math.round((grandTotal + balance) * 100) / 100;
   }
 
-  s.json({ categories: catNames, companies: compNames, matrix, compTotals, grandTotal });
+  s.json({
+    location: q.query.location || 'ALL',
+    locations: VALID_LOCATIONS,
+    categories: catNames,
+    companies: compNames,
+    matrix,
+    compTotals,
+    grandTotal
+  });
 }));
 
 // ─── EXPORT / IMPORT ─────────────────────────────────────────────────────────
@@ -208,7 +231,7 @@ app.get('/api/export', h(async (q, s) => {
     Setting.findOne({ key: 'low' }),
   ]);
   s.json({
-    version:      2,
+    version:      3,
     grades:       grades.map(g => g.name),
     companies:    companies.map(c => c.name),
     transactions: txs,
@@ -231,8 +254,8 @@ app.post('/api/import', h(async (q, s) => {
   }
   for (const tx of transactions) {
     if (tx.type && tx.date && tx.party && Array.isArray(tx.lines) && tx.lines.length) {
-      const exists = tx._id ? await Tx.findById(tx._id).catch(() => null) : null;
-      if (!exists) await Tx.create({ ...tx, _id: undefined }).catch(() => {});
+      const loc = VALID_LOCATIONS.includes(String(tx.location || '').toUpperCase()) ? tx.location.toUpperCase() : 'GODOWN 1';
+      await Tx.create({ ...tx, location: loc, _id: undefined }).catch(() => {});
     }
   }
   s.json({ ok: 1, grades: grades.length, companies: companies.length, transactions: transactions.length });
@@ -255,12 +278,21 @@ const DEFAULT_GRADES    = [
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/godownstock').then(async () => {
   const ver = await Setting.findOne({ key: 'schema_version' });
   if (!ver || ver.value < 2) {
-    // Clear ALL old data and reinitialise with new structure
     await Promise.all([Tx.deleteMany({}), Grade.deleteMany({}), Company.deleteMany({})]);
     await Grade.insertMany(DEFAULT_GRADES.map(name => ({ name })));
     await Company.insertMany(DEFAULT_COMPANIES.map(name => ({ name })));
-    await Setting.updateOne({ key: 'schema_version' }, { value: 2 }, { upsert: true });
-    console.log('✓ Database restructured — company + category matrix schema v2');
+    await Setting.updateOne({ key: 'schema_version' }, { value: 3 }, { upsert: true });
+    console.log('✓ Database initialised — schema v3 with Godown 1, Godown 2 & Office');
+  } else if (ver.value < 3) {
+    await Tx.updateMany({ location: { $exists: false } }, { $set: { location: 'GODOWN 1' } });
+    await Setting.updateOne({ key: 'schema_version' }, { value: 3 }, { upsert: true });
+    console.log('✓ Database migrated to schema v3 — locations supported');
+  }
+  if ((await Grade.countDocuments()) === 0) {
+    await Grade.insertMany(DEFAULT_GRADES.map(name => ({ name })));
+  }
+  if ((await Company.countDocuments()) === 0) {
+    await Company.insertMany(DEFAULT_COMPANIES.map(name => ({ name })));
   }
   app.listen(process.env.PORT || 3000, () =>
     console.log('GodownStock running on port', process.env.PORT || 3000)
