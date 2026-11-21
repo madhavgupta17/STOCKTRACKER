@@ -31,7 +31,7 @@ const Tx = mongoose.model('Tx', new mongoose.Schema({
   date:     { type: String, required: true, match: DATE, index: true },
   party:    { type: String, required: true, trim: true, uppercase: true },
   location: { type: String, default: 'GODOWN 1', trim: true, uppercase: true, index: true },
-  lines:    [{ _id: false, grade: { type: String, required: true }, qty: { type: Number, required: true, min: 0.0001 } }],
+  lines:    [{ _id: false, grade: { type: String, required: true }, qty: { type: Number, required: true, min: 0.0001 }, company: { type: String, default: '', trim: true, uppercase: true } }],
   notes:    { type: String, default: '' },
 }, { timestamps: true }));
 
@@ -49,13 +49,19 @@ const range = q => {
   return m;
 };
 const clean = b => {
+  const sale = b.type === 'sale';
   const lines = (b.lines || [])
-    .map(l => ({ grade: String(l.grade || '').trim(), qty: Number(l.qty) }))
+    .map(l => {
+      const obj = { grade: String(l.grade || '').trim(), qty: Number(l.qty) };
+      if (sale && l.company) obj.company = String(l.company).trim().toUpperCase();
+      return obj;
+    })
     .filter(l => l.grade);
   if (!lines.length)              throw new Error('Add at least one item');
   if (lines.some(l => !(l.qty > 0))) throw new Error('Every quantity must be above 0');
+  if (sale && lines.some(l => !l.company)) throw new Error('Select a company for every sale line');
   if (!DATE.test(b.date || ''))  throw new Error('Invalid date');
-  if (!(b.party || '').trim())   throw new Error('Company / Name is required');
+  if (!(b.party || '').trim())   throw new Error('Buyer / Company name is required');
   let location = String(b.location || 'GODOWN 1').trim().toUpperCase();
   if (!VALID_LOCATIONS.includes(location)) location = 'GODOWN 1';
   return { type: b.type, date: b.date, party: b.party, location, lines, notes: b.notes || '' };
@@ -172,18 +178,14 @@ app.get('/api/stock-matrix', h(async (q, s) => {
     Company.find().sort('_id'),
   ]);
 
-  // Aggregate purchases by (grade, company) and sales by grade
-  const purchByCompGrade = {};
-  const soldByGrade      = {};
-
+  // Direct attribution — NO proportional math → no fractions
+  const stock = {}; // stock[grade][company] = net qty
   for (const tx of allTx) {
     for (const l of tx.lines) {
-      if (tx.type === 'purchase') {
-        if (!purchByCompGrade[l.grade]) purchByCompGrade[l.grade] = {};
-        purchByCompGrade[l.grade][tx.party] = (purchByCompGrade[l.grade][tx.party] || 0) + l.qty;
-      } else {
-        soldByGrade[l.grade] = (soldByGrade[l.grade] || 0) + l.qty;
-      }
+      const company = tx.type === 'purchase' ? tx.party : (l.company || '');
+      if (!company) continue; // skip old sale lines without a company
+      if (!stock[l.grade]) stock[l.grade] = {};
+      stock[l.grade][company] = (stock[l.grade][company] || 0) + (tx.type === 'purchase' ? l.qty : -l.qty);
     }
   }
 
@@ -194,21 +196,15 @@ app.get('/api/stock-matrix', h(async (q, s) => {
   let grandTotal   = 0;
 
   for (const cat of catNames) {
-    const purch  = purchByCompGrade[cat] || {};
-    const totalP = Object.values(purch).reduce((a, b) => a + b, 0);
-    const totalS = soldByGrade[cat] || 0;
-    const balance = Math.max(0, totalP - totalS);
-
-    matrix[cat] = { _total: balance };
+    const catStock = stock[cat] || {};
+    matrix[cat] = { _total: 0 };
     for (const comp of compNames) {
-      const compP   = purch[comp] || 0;
-      const compBal = totalP > 0
-        ? Math.round((compP / totalP) * balance * 100) / 100
-        : 0;
-      matrix[cat][comp] = compBal;
-      compTotals[comp]  = Math.round((compTotals[comp] + compBal) * 100) / 100;
+      const balance = Math.max(0, Math.round((catStock[comp] || 0) * 100) / 100);
+      matrix[cat][comp] = balance;
+      compTotals[comp]  = Math.round((compTotals[comp] + balance) * 100) / 100;
+      matrix[cat]._total = Math.round((matrix[cat]._total + balance) * 100) / 100;
     }
-    grandTotal = Math.round((grandTotal + balance) * 100) / 100;
+    grandTotal = Math.round((grandTotal + matrix[cat]._total) * 100) / 100;
   }
 
   s.json({

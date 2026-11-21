@@ -236,6 +236,14 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid var(--line-light);
 }
 
+/* SALE LINE ITEM ROW (Category + Company + Qty + Remove) */
+.ln-sale {
+  display: grid; grid-template-columns: 1.8fr 1.6fr 1fr auto;
+  gap: 8px; margin-bottom: 10px; align-items: center;
+  background: #fbfdfc; padding: 8px; border-radius: var(--radius);
+  border: 1px solid var(--line-light);
+}
+
 /* CHIPS & BADGES */
 .chip {
   display: inline-flex; align-items: center; background: var(--gold-soft);
@@ -306,6 +314,9 @@ tr:hover td { background: #fafcfb; }
   .stat b { font-size: 26px; }
   .ln { grid-template-columns: 1.5fr 1fr auto; gap: 6px; padding: 6px; }
   .ln input, .ln select { padding: 10px 8px; font-size: 15px; }
+  .ln-sale { grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; }
+  .ln-sale input { grid-column: 1; }
+  .ln-sale > button { grid-column: 2; justify-self: end; }
   .tw-desktop { display: none; }
   .m-cards { display: block; }
 }
@@ -543,12 +554,28 @@ async function entryForm(type, tx, done) {
   let currentStock = await api(`/stock?location=${encodeURIComponent(defaultLoc)}`);
   let avail = Object.fromEntries(currentStock.map(s=>[s.grade, s.balance]));
 
+  // For sales: also fetch company-level stock from matrix
+  let stockMat = {}; // stockMat[grade][company] = balance
+  if (sale) {
+    const matData = await api(`/stock-matrix?location=${encodeURIComponent(defaultLoc)}`);
+    stockMat = matData.matrix || {};
+  }
+
   const [buyers] = await Promise.all([
     sale ? api('/parties?type=sale') : Promise.resolve([])
   ]);
 
   const own = {};
-  if (tx) tx.lines.forEach(l=>own[l.grade]=(own[l.grade]||0)+l.qty);
+  const ownByComp = {}; // ownByComp[grade][company] = qty (for edit mode)
+  if (tx) {
+    tx.lines.forEach(l => {
+      own[l.grade] = (own[l.grade] || 0) + l.qty;
+      if (sale && l.company) {
+        if (!ownByComp[l.grade]) ownByComp[l.grade] = {};
+        ownByComp[l.grade][l.company] = (ownByComp[l.grade][l.company] || 0) + l.qty;
+      }
+    });
+  }
 
   const locOptions = LOCATIONS.map(l =>
     `<option value="${esc(l)}"${(tx?.location||'GODOWN 1')===l?' selected':''}>${esc(l)}</option>`
@@ -565,15 +592,39 @@ async function entryForm(type, tx, done) {
   const getCatOptions = (selGrade) =>
     `<option value="">— Select Category —</option>` +
     grades.map(x =>
-      `<option${x===selGrade?' selected':''} value="${esc(x)}">${esc(x)}${sale?' ('+num(avail[x]||0)+' avail in '+(w?.querySelector('#f-loc')?.value||defaultLoc)+')':''}</option>`
+      `<option${x===selGrade?' selected':''} value="${esc(x)}">${esc(x)}</option>`
     ).join('');
 
-  const lineHtml = l => `
+  // Build company options showing available stock for a given grade
+  const getCompOptions = (selGrade, selComp) => {
+    const catStock = stockMat[selGrade] || {};
+    return `<option value="">— Select Company —</option>` +
+      companies.map(c => {
+        const rawAvail = catStock[c] || 0;
+        const extra = (ownByComp[selGrade] || {})[c] || 0;
+        const avail = Math.max(0, rawAvail + extra);
+        return `<option${c===selComp?' selected':''} value="${esc(c)}">${esc(c)} (${num(avail)} avail)</option>`;
+      }).join('');
+  };
+
+  // Line HTML for purchase: just category + qty
+  const purchLineHtml = l => `
     <div class="ln">
       <select>${getCatOptions(l?.grade)}</select>
       <input type="number" inputmode="decimal" min="0" step="any" placeholder="Qty (BKT)" value="${l?.qty??''}">
       <button type="button" class="btn d sm" title="Remove" style="padding:8px 12px;font-size:16px">✕</button>
     </div>`;
+
+  // Line HTML for sale: category + company + qty
+  const saleLineHtml = l => `
+    <div class="ln-sale">
+      <select class="sel-grade">${getCatOptions(l?.grade)}</select>
+      <select class="sel-comp">${getCompOptions(l?.grade||'', l?.company||'')}</select>
+      <input type="number" inputmode="decimal" min="0" step="any" placeholder="Qty (BKT)" value="${l?.qty??''}">
+      <button type="button" class="btn d sm" title="Remove" style="padding:8px 10px;font-size:16px">✕</button>
+    </div>`;
+
+  const lineHtml = sale ? saleLineHtml : purchLineHtml;
 
   const w = document.createElement('div');
   w.innerHTML = `
@@ -586,7 +637,7 @@ async function entryForm(type, tx, done) {
       </div>
       <div><label>${sale?'Buyer Name':'Company / Supplier'}</label>${partyHtml}</div>
     </div>
-    <label>Items — Categories &amp; Quantities</label>
+    <label>Items — ${sale ? 'Category + Company + Qty' : 'Categories & Quantities'}</label>
     <div id="lines"></div>
     <button type="button" class="btn s sm" id="add-line" style="margin-top:4px">+ Add Another Category</button>
     <div style="margin-top:14px">
@@ -602,42 +653,74 @@ async function entryForm(type, tx, done) {
   const L = w.querySelector('#lines');
   (tx?tx.lines:[null]).forEach(l=>L.insertAdjacentHTML('beforeend',lineHtml(l)));
 
-  // If sale, changing location dynamically refreshes available stock counts
+  // Location change: refresh avail stock and company options
   if (sale) {
     w.querySelector('#f-loc').onchange = async () => {
       const chosenLoc = w.querySelector('#f-loc').value;
-      currentStock = await api(`/stock?location=${encodeURIComponent(chosenLoc)}`);
+      const [newStock, newMat] = await Promise.all([
+        api(`/stock?location=${encodeURIComponent(chosenLoc)}`),
+        api(`/stock-matrix?location=${encodeURIComponent(chosenLoc)}`)
+      ]);
+      currentStock = newStock;
       avail = Object.fromEntries(currentStock.map(s=>[s.grade, s.balance]));
-      // update select options
-      L.querySelectorAll('.ln').forEach(row => {
-        const sel = row.querySelector('select');
-        const currVal = sel.value;
-        sel.innerHTML = getCatOptions(currVal);
+      stockMat = newMat.matrix || {};
+      // Refresh all company dropdowns
+      L.querySelectorAll('.ln-sale').forEach(row => {
+        const grade = row.querySelector('.sel-grade').value;
+        const comp  = row.querySelector('.sel-comp').value;
+        row.querySelector('.sel-comp').innerHTML = getCompOptions(grade, comp);
       });
     };
+
+    // When category changes in a sale line → update company dropdown
+    L.addEventListener('change', e => {
+      if (e.target.classList.contains('sel-grade')) {
+        const row = e.target.closest('.ln-sale');
+        if (row) row.querySelector('.sel-comp').innerHTML = getCompOptions(e.target.value, '');
+      }
+    });
   }
 
   L.onclick = e => {
-    if (e.target.tagName==='BUTTON' && L.children.length>1) e.target.closest('.ln').remove();
+    if (e.target.tagName==='BUTTON' && L.children.length>1) e.target.closest('.ln,.ln-sale').remove();
   };
   w.querySelector('#add-line').onclick = ()=>L.insertAdjacentHTML('beforeend',lineHtml());
   w.querySelector('#cancel-btn').onclick = ()=>tx?closeModal():done(true);
 
   w.querySelector('#save-btn').onclick = guard(async ()=>{
     const selectedLoc = w.querySelector('#f-loc').value;
-    const lines = [...L.children].map(r=>({
-      grade: r.querySelector('select').value,
-      qty:   r.querySelector('input').value
-    })).filter(l=>l.grade||l.qty);
+
+    let lines;
+    if (sale) {
+      lines = [...L.children].map(r=>({
+        grade:   r.querySelector('.sel-grade').value,
+        company: r.querySelector('.sel-comp').value,
+        qty:     r.querySelector('input').value
+      })).filter(l=>l.grade||l.qty);
+    } else {
+      lines = [...L.children].map(r=>({
+        grade: r.querySelector('select').value,
+        qty:   r.querySelector('input').value
+      })).filter(l=>l.grade||l.qty);
+    }
 
     if (!lines.length||lines.some(l=>!l.grade||!(+l.qty>0)))
       throw new Error('Select a category and enter quantity > 0 for every line');
 
     if (sale) {
+      if (lines.some(l=>!l.company))
+        throw new Error('Select a company for every sale line');
+
+      // Per (grade, company) stock check
       const need={};
-      lines.forEach(l=>need[l.grade]=(need[l.grade]||0)+(+l.qty));
-      const over=Object.keys(need).filter(g=>need[g]>(avail[g]||0)+(own[g]||0));
-      if (over.length && !confirm(`Not enough stock in ${selectedLoc} for: `+over.join(', ')+'. Save anyway?')) return;
+      lines.forEach(l=>{ const k=`${l.grade}||${l.company}`; need[k]=(need[k]||0)+(+l.qty); });
+      const over=Object.keys(need).filter(k=>{
+        const [grade,comp]=k.split('||');
+        const catStock=stockMat[grade]||{};
+        const extra=(ownByComp[grade]||{})[comp]||0;
+        return need[k]>(Math.max(0,catStock[comp]||0)+extra);
+      });
+      if (over.length && !confirm(`Not enough stock for: ${over.map(k=>k.replace('||',' from ')).join(', ')}. Save anyway?`)) return;
     }
 
     const body = {
@@ -1124,7 +1207,7 @@ async function renderLogPage(v, type) {
             <td><b>${fmt(t.date)}</b></td>
             <td>${locBadgeHtml(t.location)}</td>
             <td>${sale?esc(t.party):`<span class="comp-tag">${esc(t.party)}</span>`}</td>
-            <td>${t.lines.map(l=>`<span class="chip">${esc(l.grade)}<em>${num(l.qty)}</em></span>`).join('')}</td>
+            <td>${t.lines.map(l=>`<span class="chip">${esc(l.grade)}<em>${num(l.qty)}</em>${sale&&l.company?`<small style="opacity:.7;margin-left:3px">${esc(l.company)}</small>`:''}</span>`).join('')}</td>
             <td style="color:var(--mu);font-size:13px">${esc(t.notes||'—')}</td>
             <td class="noprint" style="white-space:nowrap">
               <button class="btn s sm" data-e="${t._id}">✏️</button>
@@ -1145,7 +1228,7 @@ async function renderLogPage(v, type) {
           </div>
         </div>
         <div class="tx-card-date">📅 ${fmt(t.date)}</div>
-        <div class="tx-card-items">${t.lines.map(l=>`<span class="chip">${esc(l.grade)}<em>${num(l.qty)} BKT</em></span>`).join('')}</div>
+        <div class="tx-card-items">${t.lines.map(l=>`<span class="chip">${esc(l.grade)}<em>${num(l.qty)} BKT</em>${sale&&l.company?`<small style="opacity:.7;margin-left:3px">${esc(l.company)}</small>`:''}</span>`).join('')}</div>
         ${t.notes?`<div class="tx-card-notes">📝 ${esc(t.notes)}</div>`:''}
         <div class="tx-card-actions noprint">
           <button class="btn s sm" data-e="${t._id}">✏️ Edit</button>
