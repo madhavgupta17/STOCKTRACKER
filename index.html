@@ -428,7 +428,7 @@ function locBadgeHtml(loc) {
   return `<span class="loc-badge ${cls}">${esc(l)}</span>`;
 }
 
-// ─── PDF GENERATOR — MATCHES EXCEL MATRIX FOR ANY LOCATION ────────────────────
+// ─── PDF GENERATOR — 2-PAGE SPLIT + FULL COMPANY NAMES ────────────────────────
 async function downloadLocationPdf(targetLoc) {
   try {
     toast(`Generating ${targetLoc} PDF...`);
@@ -436,72 +436,157 @@ async function downloadLocationPdf(targetLoc) {
     const data = await api('/stock-matrix' + q);
     const { categories, companies: comps, matrix: mat, compTotals, grandTotal } = data;
 
-    const doc = new jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-
     let titleText = 'GODOWN STOCK REPORT';
     if (targetLoc === 'GODOWN 1') titleText = 'GODOWN 1 — STOCK REPORT';
     else if (targetLoc === 'GODOWN 2') titleText = 'GODOWN 2 — STOCK REPORT';
     else if (targetLoc === 'OFFICE')   titleText = 'OFFICE STOCK REPORT';
     else if (targetLoc === 'ALL')      titleText = 'CONSOLIDATED STOCK REPORT (ALL GODOWNS & OFFICE)';
 
-    // Title & Header
-    doc.setFont('helvetica','bold');
-    doc.setFontSize(18);
-    doc.setTextColor(14,100,76);
-    doc.text(titleText, 14, 16);
-
-    doc.setFont('helvetica','normal');
-    doc.setFontSize(9);
-    doc.setTextColor(100);
     const dateStr = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
-    doc.text(`Location: ${targetLoc}   |   Date: ${dateStr}   |   GodownStock Management`, 14, 22);
-    doc.setTextColor(0);
 
-    const head = [['Cashew Category', ...comps, 'Total']];
-    const body = categories.map(cat => [
-      cat,
-      ...comps.map(c => mat[cat][c] > 0 ? num(mat[cat][c]).toString() : '-'),
-      mat[cat]._total > 0 ? num(mat[cat]._total).toString() : '-'
-    ]);
-    body.push(['Total', ...comps.map(c => num(compTotals[c]).toString()), num(grandTotal).toString()]);
+    // ── Split categories into two groups ───────────────────────────────────────
+    // Group A: letters only OR number suffix is exactly 1 (e.g. JH, Mix, Sk, Kk, Sjh, Bpcs, Lwp, Swp, JK 1, JH 1)
+    // Group B: has a numeric suffix > 1 (e.g. W240, W320, S240, Y320, S210, K2, W160, W400, A210, A320, Mix 400)
+    const isNumericSuffix = name => {
+      const m = String(name).trim().match(/(\d+)\s*$/);
+      return m && parseInt(m[1]) > 1;
+    };
+    const groupB = categories.filter(c => isNumericSuffix(c));  // numeric suffix > 1
+    const groupA = categories.filter(c => !isNumericSuffix(c)); // letters only or suffix = 1
 
-    doc.autoTable({
-      head,
-      body,
-      startY: 26,
-      headStyles: {
-        fillColor: [14,124,95], textColor:[255,255,255],
-        fontStyle:'bold', fontSize:10, cellPadding:4, halign:'center'
-      },
-      bodyStyles: { fontSize:10, cellPadding:3.5, halign:'center' },
-      columnStyles: {
-        0: { halign:'left', fontStyle:'bold', cellWidth:38 }
-      },
-      styles: { overflow:'linebreak', lineWidth:0.1, lineColor:[200,215,210] },
-      alternateRowStyles: { fillColor:[245,251,248] },
-      didParseCell: (d) => {
-        if (d.row.index === body.length - 1) {
-          d.cell.styles.fontStyle  = 'bold';
-          d.cell.styles.fillColor  = [14,124,95];
-          d.cell.styles.textColor  = [255,255,255];
+    // ── Compute column widths to avoid wrapping ────────────────────────────────
+    // A4 landscape = 297mm; margins 14mm each side → usable = 269mm
+    const pageW = 297;
+    const margin = 14;
+    const usable = pageW - margin * 2; // 269mm
+
+    // Category col fixed at 44mm; remaining split among companies + Total
+    const catColW = 44;
+    const numCols = comps.length + 1; // companies + Total
+    const dataColW = Math.max(18, Math.floor((usable - catColW) / numCols));
+
+    // Font size scales down if many columns
+    const headerFontSz = comps.length > 7 ? 7.5 : 9;
+    const bodyFontSz   = comps.length > 7 ? 8.5 : 10;
+
+    // ── Build autoTable column styles ─────────────────────────────────────────
+    const colStyles = { 0: { halign:'left', fontStyle:'bold', cellWidth: catColW } };
+    for (let i = 1; i <= numCols; i++) {
+      colStyles[i] = { halign:'center', cellWidth: dataColW };
+    }
+    // Total column always bold
+    colStyles[numCols] = { halign:'center', cellWidth: dataColW, fontStyle:'bold' };
+
+    // ── Shared table renderer ─────────────────────────────────────────────────
+    const renderTable = (doc, cats, startY, isFirstPage) => {
+      const totalRow = (cats) => {
+        // Per-company totals for this subset of categories
+        const subCompTotals = Object.fromEntries(comps.map(c => [c,
+          cats.reduce((sum, cat) => sum + (mat[cat][c] || 0), 0)
+        ]));
+        const subGrand = Object.values(subCompTotals).reduce((a,b)=>a+b,0);
+        return ['Total',
+          ...comps.map(c => num(subCompTotals[c]) > 0 ? num(subCompTotals[c]).toString() : '-'),
+          num(subGrand) > 0 ? num(subGrand).toString() : '-'
+        ];
+      };
+
+      const body = cats.map(cat => [
+        cat,
+        ...comps.map(c => mat[cat][c] > 0 ? num(mat[cat][c]).toString() : '-'),
+        mat[cat]._total > 0 ? num(mat[cat]._total).toString() : '-'
+      ]);
+      body.push(totalRow(cats));
+
+      doc.autoTable({
+        head: [['Cashew Category', ...comps, 'Total']],
+        body,
+        startY,
+        tableWidth: usable,
+        margin: { left: margin, right: margin },
+        headStyles: {
+          fillColor: [14,124,95], textColor:[255,255,255],
+          fontStyle:'bold', fontSize: headerFontSz,
+          cellPadding: { top:4, bottom:4, left:3, right:3 },
+          halign:'center', valign:'middle',
+          overflow: 'linebreak',
+          minCellHeight: 0,
+        },
+        bodyStyles: { fontSize: bodyFontSz, cellPadding:3, halign:'center', valign:'middle' },
+        columnStyles: colStyles,
+        styles: { overflow:'hidden', lineWidth:0.15, lineColor:[200,215,210] },
+        alternateRowStyles: { fillColor:[245,251,248] },
+        didParseCell: (d) => {
+          // Total row — green fill
+          if (d.row.index === body.length - 1) {
+            d.cell.styles.fontStyle = 'bold';
+            d.cell.styles.fillColor = [14,124,95];
+            d.cell.styles.textColor = [255,255,255];
+          }
+          // Total column — bold
+          if (d.column.index === comps.length + 1 && d.row.index < body.length - 1) {
+            d.cell.styles.fontStyle = 'bold';
+          }
+          // Category column — left-align, bold
+          if (d.column.index === 0) {
+            d.cell.styles.halign = 'left';
+            d.cell.styles.fontStyle = 'bold';
+          }
         }
-        if (d.column.index === head[0].length - 1 && d.row.index < body.length - 1) {
-          d.cell.styles.fontStyle = 'bold';
-        }
-      }
-    });
+      });
+    };
 
-    const pg = doc.internal.getNumberOfPages();
-    for (let i=1; i<=pg; i++) {
+    // ── Helper: draw page header ───────────────────────────────────────────────
+    const drawPageHeader = (doc, subtitle) => {
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(16);
+      doc.setTextColor(14,100,76);
+      doc.text(titleText, margin, 14);
+
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100);
+      doc.text(`Location: ${targetLoc}   |   Date: ${dateStr}   |   GodownStock Management`, margin, 20);
+
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(10);
+      doc.setTextColor(14,100,76);
+      doc.text(subtitle, margin, 27);
+      doc.setTextColor(0);
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // PAGE 1 — Letter-only & suffix-1 categories (e.g. JH, Mix, Sk, JK 1 …)
+    // ══════════════════════════════════════════════════════════════════════════
+    const doc = new jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+
+    if (groupA.length > 0) {
+      drawPageHeader(doc, 'Sheet 1 — Grade Categories (Letters / Suffix 1)');
+      renderTable(doc, groupA, 31, true);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // PAGE 2 — Numeric-suffix categories (e.g. W240, W320, S240, Mix 400 …)
+    // ══════════════════════════════════════════════════════════════════════════
+    if (groupB.length > 0) {
+      if (groupA.length > 0) doc.addPage();
+      drawPageHeader(doc, 'Sheet 2 — Grade Categories (Numeric Suffix)');
+      renderTable(doc, groupB, 31, false);
+    }
+
+    // ── Footer on every page ──────────────────────────────────────────────────
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(7); doc.setTextColor(160);
-      doc.text(`GodownStock — ${titleText}`, 14, doc.internal.pageSize.height-6);
-      doc.text('Page '+i+' of '+pg, doc.internal.pageSize.width-28, doc.internal.pageSize.height-6);
+      doc.text(`GodownStock — ${titleText}`, margin, doc.internal.pageSize.height - 6);
+      doc.text('Page ' + i + ' of ' + totalPages,
+        doc.internal.pageSize.width - margin - 20, doc.internal.pageSize.height - 6);
     }
 
     const fname = (targetLoc.toLowerCase().replace(/\s+/g,'-')) + '-stock-' + today() + '.pdf';
     doc.save(fname);
-    toast(`${titleText} downloaded!`);
+    toast(`${titleText} downloaded! (${totalPages} page${totalPages>1?'s':''})`);
   } catch(err) {
     toast(err.message || 'PDF export failed', 1);
   }
